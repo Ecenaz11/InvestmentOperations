@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Business.Abstract;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using System;
@@ -16,36 +17,46 @@ namespace InvestmentOperations.Business.Concrete
         public PriceManager(IPriceDal priceDal, IAssetDal assetDal)
         {
             _priceDal = priceDal;
+            _assetDal = assetDal;
 
         }
 
-        public void Add(Price price)
+        public IResult Add(Price price)
         {
             PreparePrice(price);
             ValidatePrice(price);
             ValidateCurrentPrice(price);
             CheckExistingAsset(price.AssetId);
-            CheckDuplicatePrice(price.AssetId);
+            //CheckDuplicatePrice(price.AssetId);
             _priceDal.Add(price);
+            return new SuccessResult("Price added successfully.");
         }
 
-        public void Delete(int id)
+        public IResult Delete(int id)
         {
             var price = GetExistingPrice(id);
             _priceDal.Delete(price);
+            return new SuccessResult("Price deleted successfully.");
         }
 
-        public List<Price> GetAll()
+        public IDataResult<List<Price>> GetAll()
         {
-            return _priceDal.GetAll();
+            return new SuccessDataResult<List<Price>>
+                (
+                _priceDal.GetAll(), "Prices listed."
+                );
         }
 
-        public Price GetById(int id)
+        public IDataResult<Price> GetById(int id)
         {
-            return GetExistingPrice(id);
+            return new SuccessDataResult<Price>
+                (
+                GetExistingPrice(id), "Price found."
+                );
+
         }
 
-        public void Update(Price price)
+        public IResult Update(Price price)
         {
             var existingPrice = GetExistingPrice(price.PriceId);
             ValidatePrice(price);
@@ -53,6 +64,7 @@ namespace InvestmentOperations.Business.Concrete
             CheckExistingAsset(price.AssetId);
             PreparePrice(price);
             _priceDal.Update(price);
+            return new SuccessResult("Price updated successfully.");
         }
        
         

@@ -73,6 +73,8 @@ namespace InvestmentOperations.DataAccess.Concrete.FileContext
                 tradeToUpdate.Amount = trade.Amount;
                 tradeToUpdate.UnitPrice = trade.UnitPrice;
                 tradeToUpdate.TotalPrice = trade.TotalPrice;
+
+                WriteToFile(list);
             }
             
         }

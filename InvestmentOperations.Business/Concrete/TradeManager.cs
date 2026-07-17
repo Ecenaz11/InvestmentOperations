@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Business.Abstract;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using System;
@@ -20,31 +21,39 @@ namespace InvestmentOperations.Business.Concrete
             _userService = userService;
         }
 
-        public void Add(Trade trade)
+        public IResult Add(Trade trade)
         {
             CheckDuplicateTradeId(trade.TradeId);
             CheckRelations(trade);
             ValidateTrade(trade);
             PrepareTrade(trade);
             _tradeDal.Add(trade);
+            return new SuccessResult("Trade added successfully.");
         }
 
-        public void Delete(int id)
+        public IResult Delete(int id)
         {
             var trade = GetExistingTrade(id);
             _tradeDal.Delete(trade);
+            return new SuccessResult("Trade deleted successfully.");
         }
-        public List<Trade> GetAll()
+        public IDataResult<List<Trade>> GetAll()
         {
-            return _tradeDal.GetAll();
+            return new SuccessDataResult<List<Trade>>
+                (
+                _tradeDal.GetAll(), "Trades listed."
+                );
         }
 
-        public Trade GetById(int id)
+        public IDataResult<Trade> GetById(int id)
         {
-            return GetExistingTrade(id);
+            return new SuccessDataResult<Trade>
+                (
+                GetExistingTrade(id), "Trade found."
+                );
         }
 
-        public void Update(Trade trade)
+        public IResult Update(Trade trade)
         {
             var existingTrade = GetExistingTrade(trade.TradeId);
             CheckRelations(trade);
@@ -52,6 +61,7 @@ namespace InvestmentOperations.Business.Concrete
             PrepareTrade(trade);
             
             _tradeDal.Update(trade);
+            return new SuccessResult("Trade updated successfully.");
         }
 
 

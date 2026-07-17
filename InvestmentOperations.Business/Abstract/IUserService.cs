@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Entities.Concrete;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -8,10 +9,10 @@ namespace InvestmentOperations.Business.Abstract
 {
     public interface IUserService
     {
-        void Add(User user);
-        void Delete(int id);
-        void Update(User user);
-        List<User> GetAll();
-        User GetById(int id);
+        IResult Add(User user);
+        IResult Delete(int id);
+        IResult Update(User user);
+        IDataResult<List<User>> GetAll();
+        IDataResult<User> GetById(int id);
     }
 }

@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Entities.Concrete;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -8,11 +9,11 @@ namespace InvestmentOperations.Business.Abstract
 {
     public interface ITradeService
     {
-        void Add(Trade trade);
-        void Update(Trade trade);
-        void Delete(int id);
-        List<Trade> GetAll();
-        Trade GetById(int id);
+        IResult Add(Trade trade);
+        IResult Update(Trade trade);
+        IResult Delete(int id);
+        IDataResult<List<Trade>> GetAll();
+        IDataResult<Trade> GetById(int id);
 
 
     }

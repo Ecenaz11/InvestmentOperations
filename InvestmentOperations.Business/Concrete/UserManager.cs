@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Business.Abstract;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using Microsoft.Identity.Client;
@@ -18,7 +19,7 @@ namespace InvestmentOperations.Business.Concrete
             _userDal = userDal;
         }
 
-        public void Add(User user)
+        public IResult Add(User user)
         {
             ValidateUser(user);
             PrepareUser(user);
@@ -26,26 +27,36 @@ namespace InvestmentOperations.Business.Concrete
             ValidatePassword(user);
 
             _userDal.Add(user);
+
+            return new SuccessResult("User added successfully.");
         }
 
-        public void Delete(int id)
+        public IResult Delete(int id)
         {
             var user = GetExistingUser(id);
             _userDal.Delete(user);
+
+            return new SuccessResult("User deleted successfully.");
         }
 
-        public User GetById(int id)
+        public IDataResult<User> GetById(int id)
         {
-            return GetExistingUser(id);
+            return new SuccessDataResult<User>
+                (
+                 GetExistingUser(id), "User found."
+                );
         }
 
 
-        public List<User> GetAll()
+        public IDataResult<List<User>> GetAll()
         {
-            return _userDal.GetAll();
+            return new SuccessDataResult<List<User>>
+              (
+                _userDal.GetAll(), "Users listed."
+              );
         }
 
-        public void Update(User user)
+        public IResult Update(User user)
         {
             var existingUser = GetExistingUser(user.UserId);
             PrepareUser(user);
@@ -55,6 +66,7 @@ namespace InvestmentOperations.Business.Concrete
             ValidatePassword(user);
 
             _userDal.Update(user);
+            return new SuccessResult("User udpated successfully.");
         }
       
         #region Validation Methods
@@ -137,6 +149,7 @@ namespace InvestmentOperations.Business.Concrete
             }
             return user;
         }
+
         #endregion
 
 

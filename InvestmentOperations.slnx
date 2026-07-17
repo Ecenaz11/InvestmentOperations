@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="InvestmentOperation.Core/InvestmentOperation.Core.csproj" Id="5cc00fe3-453d-4408-a767-c9bb86e14a1d" />
   <Project Path="InvestmentOperations.API/InvestmentOperations.API.csproj" Id="049a6dc8-285f-44fe-b8ca-4c3461ea7756" />
   <Project Path="InvestmentOperations.Business/InvestmentOperations.Business.csproj" />
   <Project Path="InvestmentOperations.DataAccess/InvestmentOperations.DataAccess.csproj" />

@@ -73,6 +73,8 @@ namespace InvestmentOperations.DataAccess.Concrete.FileContext
                 userToUpdate.Email = user.Email;
                 userToUpdate.PasswordHash = user.PasswordHash;
                 userToUpdate.IsActive = user.IsActive;
+
+                WriteToFile(list);
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Business.Abstract;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using Microsoft.Identity.Client;
@@ -18,36 +19,48 @@ namespace InvestmentOperations.Business.Concrete
             _assetDal = assetDal;
         }
 
-        public void Add(Asset asset)
+        public IResult Add(Asset asset)
         {
-            ValidateAsset(asset);
+          var result = ValidateAsset(asset);
+            if(!result.Success)
+            {
+                return result;
+            }
+
             PrepareAsset(asset);
             ValidateAssetType(asset);
-            ValidateAssetCodeAndType(asset);
+           // ValidateAssetCodeAndType(asset);
             CheckDuplicateAssetCode(asset.AssetCode);
             _assetDal.Add(asset);
+            return new SuccessResult("Asset added successfully.");
         }
 
-        public void Delete(int id)
+        public IResult Delete(int id)
         {
             var asset = GetExistingAsset(id);
             _assetDal.Delete(asset);
+            return new SuccessResult("Asset deleted successfully.");
 
         }
 
-        public Asset GetById(int id)
+        public IDataResult<Asset> GetById(int id)
         {
-            return GetExistingAsset(id);
-
+            return new SuccessDataResult<Asset> 
+                (
+                GetExistingAsset(id), "Asset found."
+                );
         }
 
 
-        public List<Asset> GetAll()
+        public IDataResult<List<Asset>> GetAll()
         {
-            return _assetDal.GetAll();
+            return new SuccessDataResult<List<Asset>>
+                (
+                _assetDal.GetAll(), "Assets listed."
+                );
         }
 
-        public void Update(Asset asset)
+        public IResult Update(Asset asset)
         {
 
             var existingAsset = GetExistingAsset(asset.AssetId);
@@ -55,37 +68,35 @@ namespace InvestmentOperations.Business.Concrete
             PrepareAsset(asset);
             ValidateAsset(asset); 
             ValidateAssetType(asset);
-            ValidateAssetCodeAndType(asset);
+           // ValidateAssetCodeAndType(asset);
             ValidateAssetCodeChange(existingAsset,asset);
             _assetDal.Update(asset);
+            return new SuccessResult("Asset updated successfully.");
+
         }
 
 
         #region Validation Methods
-       
-        private void ValidateAsset(Asset asset)
+
+        private IResult ValidateAsset(Asset asset)
         {
-            var englishCharacterPattern = @"^[a-zA-Z0-9\*$";
 
             if (asset == null)
             {
-                throw new Exception("Asset cannot be empty.");
+                return new ErrorResult("Asset cannot be empty.");
             }
 
             if (string.IsNullOrWhiteSpace(asset.AssetName))
             {
-                throw new Exception("Asset name cannot be empty");
+                return new ErrorResult("Asset name cannot be empty");
             }
 
             if (string.IsNullOrWhiteSpace(asset.AssetCode))
             {
-                throw new Exception("Asset Code cannot be empty.");
+                return new ErrorResult("Asset Code cannot be empty.");
             }
 
-            if(!Regex.IsMatch(asset.AssetName,englishCharacterPattern));
-            {
-                throw new Exception("Please use only English characters for names (No: ı, ş, ğ, ü, ö, ç).");
-            }
+            return new SuccessResult();
         }
         private void PrepareAsset(Asset asset)
         {
@@ -151,7 +162,7 @@ namespace InvestmentOperations.Business.Concrete
                 throw new Exception("Invalid Asset Type. Only PRECIOUSMETAL OR CURRENCY are allowed.");
             }
         }
-
+        /*
         private void ValidateAssetCodeAndType(Asset asset)
         {
             if(asset.AssetType=="PRECIOUSMETAL")
@@ -168,7 +179,7 @@ namespace InvestmentOperations.Business.Concrete
                 {
                     if (asset.AssetCode != "USD" &&
                         asset.AssetCode != "EUR" &&
-                        asset.AssetCode != "XPD")
+                        asset.AssetCode != "GBP")
                     {
                         throw new Exception("This Asset Code is invalid for the Currency. ");
                     }
@@ -176,7 +187,7 @@ namespace InvestmentOperations.Business.Concrete
             }
 
         }
-
+        */
         #endregion 
 
 

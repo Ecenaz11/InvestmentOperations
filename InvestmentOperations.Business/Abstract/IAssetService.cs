@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Entities.Concrete;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -8,11 +9,11 @@ namespace InvestmentOperations.Business.Abstract
 {
     public interface IAssetService 
     {
-        List<Asset> GetAll();
-        Asset GetById(int id);
-        void Add(Asset asset);
-        void Delete(int id);
-        void Update(Asset asset);
+        IDataResult<List<Asset>> GetAll();
+        IDataResult<Asset> GetById(int id);
+        IResult Add(Asset asset);
+        IResult Delete(int id);
+        IResult Update(Asset asset);
 
     }
 }

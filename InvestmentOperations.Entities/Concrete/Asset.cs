@@ -1,4 +1,4 @@
-﻿using InvestmentOperations.Entities.Abstract;
+﻿using InvestmentOperation.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Security.Principal;

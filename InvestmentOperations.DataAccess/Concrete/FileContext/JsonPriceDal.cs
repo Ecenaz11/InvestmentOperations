@@ -72,6 +72,8 @@ namespace InvestmentOperations.DataAccess.Concrete.FileContext
             {
                 priceToUpdate.CurrentPrice = price.CurrentPrice;
                 priceToUpdate.UpdatedAt = price.UpdatedAt;
+
+                WriteToFile(list);
             }
         }
     }

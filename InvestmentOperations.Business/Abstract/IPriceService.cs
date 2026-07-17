@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Entities.Concrete;
+﻿using InvestmentOperation.Core.Utilities.Results;
+using InvestmentOperations.Entities.Concrete;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
@@ -9,11 +10,11 @@ namespace InvestmentOperations.Business.Abstract
 {
     public interface IPriceService
     {
-        void Add(Price price);
-        void Update(Price price);
-        void Delete(int id);
-        Price GetById(int id);
-        List<Price> GetAll();
+        IResult Add(Price price);
+        IResult Update(Price price);
+        IResult Delete(int id);
+        IDataResult<Price> GetById(int id);
+        IDataResult<List<Price>> GetAll();
 
 
     }

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace InvestmentOperations.Entities.Abstract
+namespace InvestmentOperation.Core.Entities
 {
-    public interface IEntity
+    public interface IDto
     {
     }
 }
