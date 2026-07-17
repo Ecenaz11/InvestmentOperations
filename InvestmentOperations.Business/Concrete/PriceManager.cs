@@ -106,15 +106,7 @@ namespace InvestmentOperations.Business.Concrete
             }
         }
 
-        private Price GetExistingPrice(int id)
-        {
-            var existingPrice = _priceDal.Get(p => p.PriceId ==id);
-            if(existingPrice ==null)
-            {
-                throw new Exception($"Price record with ID {id} was not found.");
-            }
-            return existingPrice;
-        }
+        
 
         private void CheckDuplicatePrice(int assetId)
         {

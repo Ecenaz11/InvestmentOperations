@@ -19,86 +19,63 @@ namespace InvestmentOperations.API.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-           try
+            var result = _assetService.GetAll();
+            if (!result.Success)
             {
-                var result = _assetService.GetAll();
-                return Ok(result);
+                return BadRequest(result.Message);
             }
 
-            catch(Exception ex)
-            {
-                return BadRequest($"An error occured while listing the data:{ex.Message}");
-            }
+            return Ok(result.Message);
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-           try
+            var result = _assetService.GetById(id);
+            if (result.Success)
             {
-                var result = _assetService.GetById(id);
-                if (result==null)
-                {
-                    return NotFound("Asset not found.");
-                }
-                return Ok(result);
+                return Ok(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occured while retrieving the data: {ex.Message}");
-            }
-            
+
+             return BadRequest(result.Message);
+
         }
 
         [HttpPost]
         public IActionResult Add(Asset asset)
         {
-            try
+            var result = _assetService.Add(asset);
+            if(!result.Success)
             {
-                _assetService.Add(asset);
-                return Ok("The Asset has been added successfully.");
+                return BadRequest(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+
+            return Ok(result.Message);
 
         }
 
         [HttpPut]
         public IActionResult Update(Asset asset)
         {
-            try
+            var result = _assetService.Update(asset);
+            if(!result.Success)
             {
-                _assetService.Update(asset);
-                return Ok("The Asset has been successfully updated.");
+                return BadRequest(result.Message);
             }
-
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result.Message);
         }
       
         
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            try
+            var result = _assetService.Delete(id);
+            if(!result.Success)
             {
-                var asset = _assetService.GetById(id);
-                if (asset == null)
-                {
-                    return NotFound("Asset not found.");
-                }
-                _assetService.Delete(id);
-                return Ok("The Asset has been successfully deleted.");
+                return BadRequest(result.Message);
             }
-
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result.Message);
+                
                 
         }
     }

@@ -69,6 +69,8 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult("User udpated successfully.");
         }
       
+      
+        
         #region Validation Methods
 
         private void ValidateUser(User user)
@@ -140,15 +142,7 @@ namespace InvestmentOperations.Business.Concrete
 
         }
 
-        private User GetExistingUser(int id)
-        {
-            var user = _userDal.Get(u => u.UserId == id);
-            if (user == null)
-            {
-                throw new Exception("User not found.");
-            }
-            return user;
-        }
+       
 
         #endregion
 

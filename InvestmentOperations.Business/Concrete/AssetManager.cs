@@ -5,6 +5,7 @@ using InvestmentOperations.Entities.Concrete;
 using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -21,27 +22,27 @@ namespace InvestmentOperations.Business.Concrete
 
         public IResult Add(Asset asset)
         {
-          var validateResult = ValidateAsset(asset);
-            if(!validateResult.Success)
+          IResult result  = ValidateAsset(asset);
+            if(!result.Success)
             {
-                return validateResult;
+                return result;
             }
 
             PrepareAsset( asset);
            
            
-           var validateTypeResult = ValidateAssetType(asset);
-            if(!validateTypeResult.Success)
+            result = ValidateAssetType(asset);
+            if(!result.Success)
             {
-                return validateTypeResult;
+                return result;
             }
 
            // ValidateAssetCodeAndType(asset);
 
-            var duplicateResult = CheckDuplicateAssetCode(asset.AssetCode);
-            if (!duplicateResult.Success)
+             result = CheckDuplicateAssetCode(asset.AssetCode);
+            if (!result.Success)
             {
-                return duplicateResult;
+                return result;
             }
             
             _assetDal.Add(asset);
@@ -50,12 +51,13 @@ namespace InvestmentOperations.Business.Concrete
 
         public IResult Delete(int id)
         {
-            var asset = GetExistingAsset(id);
+            var asset = _assetDal.Get(a =>a.AssetId == id);
            
            if(asset==null)
             {
                 return new ErrorResult("Asset not found.");
             }
+           
             _assetDal.Delete(asset);
           
             
@@ -65,10 +67,12 @@ namespace InvestmentOperations.Business.Concrete
 
         public IDataResult<Asset> GetById(int id)
         {
-            return new SuccessDataResult<Asset> 
-                (
-                GetExistingAsset(id), "Asset found."
-                );
+            var asset = _assetDal.Get(a => a.AssetId == id);
+            if(asset==null)
+            {
+                return new ErrorDataResult<Asset>("Asset not found.");
+            }
+            return new SuccessDataResult<Asset>(asset);
         }
 
 
@@ -83,13 +87,38 @@ namespace InvestmentOperations.Business.Concrete
         public IResult Update(Asset asset)
         {
 
-            var existingAsset = GetExistingAsset(asset.AssetId);
+            var existingAsset = _assetDal.Get(a => a.AssetId == asset.AssetId);
+            if(existingAsset==null)
+            {
+                return new ErrorResult("Asset not found.");
+            }
            
-            PrepareAsset(asset);
-            ValidateAsset(asset); 
-            ValidateAssetType(asset);
-           // ValidateAssetCodeAndType(asset);
-            ValidateAssetCodeChange(existingAsset,asset);
+             PrepareAsset(asset);
+           
+            IResult result = ValidateAsset(asset); 
+            if(!result.Success )
+            {
+                return result;
+            }
+           
+            result = ValidateAssetType(asset);
+            if(!result.Success)
+            {
+                return result;
+            }
+          
+            // ValidateAssetCodeAndType(asset);
+
+           result =  ValidateAssetCodeChange(existingAsset,asset);
+            if(!result.Success)
+            {
+                return result;
+            }
+
+            result = CheckDuplicateAssetCode(asset.AssetCode);
+            if (!result.Success)
+                return result;
+           
             _assetDal.Update(asset);
             return new SuccessResult("Asset updated successfully.");
 
@@ -127,17 +156,20 @@ namespace InvestmentOperations.Business.Concrete
             asset.AssetType = asset.AssetType.Trim().ToUpperInvariant();
         }
 
+        
         private IResult CheckDuplicateAssetCode(string assetCode)
         {
             if (string.IsNullOrWhiteSpace(assetCode))
             {
-                return new ErrorResult("Asset Code cannot be empty");
+                return new ErrorResult("Asset Code cannot be empty") ;
+  
             }
+            
 
-            var allAsets = _assetDal.GetAll();
-            if (allAsets != null && allAsets.Count > 0 )
+            var allAssets = _assetDal.GetAll();
+            if (allAssets != null && allAssets.Count > 0 )
             {
-                bool isDuplicate = allAsets.Any(a =>
+                bool isDuplicate = allAssets.Any(a =>
                 !string.IsNullOrWhiteSpace(a.AssetCode) &&
                 string.Equals(a.AssetCode.Trim(), assetCode.Trim(), StringComparison.OrdinalIgnoreCase));
 
@@ -145,22 +177,17 @@ namespace InvestmentOperations.Business.Concrete
                 {
                     return new ErrorResult("This AssetCode already exists.");
                 }
+
             }
 
             return new SuccessResult(); 
         }
-
-        private Asset GetExistingAsset(int id)
+/*
+        private IResult CheckDuplicateAssetName(string assetName)
         {
-            var asset = _assetDal.GetAll()
-                .FirstOrDefault(a => a.AssetId == id);
-            if (asset==null)
-            {
-                throw new Exception("Asset not found.");
-            }
 
-            return asset;
         }
+*/
 
         private IResult ValidateAssetCodeChange(Asset existingAsset, Asset updatedAsset)
         {
@@ -172,7 +199,19 @@ namespace InvestmentOperations.Business.Concrete
             }
             return new SuccessResult();
 
+
             
+        }
+        public static bool IsNullOrWhiteSpace1([NotNullWhen(false)] string? value)
+        {
+            if (value == null) return false;
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i])) return false;
+            }
+
+            return true;
         }
 
         private IResult ValidateAssetType(Asset asset)
@@ -185,7 +224,7 @@ namespace InvestmentOperations.Business.Concrete
             bool isPreciousMetal = string.Equals(asset.AssetType.Trim(), "PRECIOUSMETAL", StringComparison.OrdinalIgnoreCase);
             bool isCurrency = string.Equals(asset.AssetType.Trim(), "CURRENCY", StringComparison.OrdinalIgnoreCase);
 
-            if(!isPreciousMetal&& !isCurrency)
+            if(!isPreciousMetal && !isCurrency)
             {
                return new ErrorResult("Invalid Asset Type. Only PRECIOUSMETAL OR CURRENCY are allowed.");
             }
@@ -218,8 +257,8 @@ namespace InvestmentOperations.Business.Concrete
 
         }
         */
-        #endregion 
-
+        #endregion
+        
 
     }
 

@@ -120,16 +120,7 @@ namespace InvestmentOperations.Business.Concrete
             }
         }
         
-        private Trade GetExistingTrade(int tradeId)
-        {
-            var existingTrade = _tradeDal.Get(t => t.TradeId == tradeId);
-            if (existingTrade == null)
-            {
-                throw new Exception($"Trade record with ID {tradeId} was not found.");
-            }
-            return existingTrade;
-                
-        }
+       
 
         public void Delete(Trade trade)
         {
