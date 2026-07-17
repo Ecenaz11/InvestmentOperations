@@ -21,16 +21,29 @@ namespace InvestmentOperations.Business.Concrete
 
         public IResult Add(Asset asset)
         {
-          var result = ValidateAsset(asset);
-            if(!result.Success)
+          var validateResult = ValidateAsset(asset);
+            if(!validateResult.Success)
             {
-                return result;
+                return validateResult;
             }
 
-            PrepareAsset(asset);
-            ValidateAssetType(asset);
+            PrepareAsset( asset);
+           
+           
+           var validateTypeResult = ValidateAssetType(asset);
+            if(!validateTypeResult.Success)
+            {
+                return validateTypeResult;
+            }
+
            // ValidateAssetCodeAndType(asset);
-            CheckDuplicateAssetCode(asset.AssetCode);
+
+            var duplicateResult = CheckDuplicateAssetCode(asset.AssetCode);
+            if (!duplicateResult.Success)
+            {
+                return duplicateResult;
+            }
+            
             _assetDal.Add(asset);
             return new SuccessResult("Asset added successfully.");
         }
@@ -38,7 +51,14 @@ namespace InvestmentOperations.Business.Concrete
         public IResult Delete(int id)
         {
             var asset = GetExistingAsset(id);
+           
+           if(asset==null)
+            {
+                return new ErrorResult("Asset not found.");
+            }
             _assetDal.Delete(asset);
+          
+            
             return new SuccessResult("Asset deleted successfully.");
 
         }
@@ -76,6 +96,8 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
+      
+        
         #region Validation Methods
 
         private IResult ValidateAsset(Asset asset)
@@ -105,11 +127,11 @@ namespace InvestmentOperations.Business.Concrete
             asset.AssetType = asset.AssetType.Trim().ToUpperInvariant();
         }
 
-        private void CheckDuplicateAssetCode(string assetCode)
+        private IResult CheckDuplicateAssetCode(string assetCode)
         {
             if (string.IsNullOrWhiteSpace(assetCode))
             {
-                throw new Exception("Asset Code cannot be empty");
+                return new ErrorResult("Asset Code cannot be empty");
             }
 
             var allAsets = _assetDal.GetAll();
@@ -121,9 +143,11 @@ namespace InvestmentOperations.Business.Concrete
 
                 if (isDuplicate)
                 {
-                    throw new Exception("This AssetCode already exists.");
+                    return new ErrorResult("This AssetCode already exists.");
                 }
             }
+
+            return new SuccessResult(); 
         }
 
         private Asset GetExistingAsset(int id)
@@ -138,20 +162,24 @@ namespace InvestmentOperations.Business.Concrete
             return asset;
         }
 
-        private void ValidateAssetCodeChange(Asset existingAsset, Asset updatedAsset)
+        private IResult ValidateAssetCodeChange(Asset existingAsset, Asset updatedAsset)
         {
 
             if (existingAsset.AssetCode!=updatedAsset.AssetCode)
             {
                 CheckDuplicateAssetCode(updatedAsset.AssetCode);
+
             }
+            return new SuccessResult();
+
+            
         }
 
-        private void ValidateAssetType(Asset asset)
+        private IResult ValidateAssetType(Asset asset)
         {
            if (string.IsNullOrWhiteSpace(asset.AssetType))
             {
-                throw new Exception("Asset Type cannot be empty");
+                return new ErrorResult("Asset Type cannot be empty");
             }
 
             bool isPreciousMetal = string.Equals(asset.AssetType.Trim(), "PRECIOUSMETAL", StringComparison.OrdinalIgnoreCase);
@@ -159,8 +187,10 @@ namespace InvestmentOperations.Business.Concrete
 
             if(!isPreciousMetal&& !isCurrency)
             {
-                throw new Exception("Invalid Asset Type. Only PRECIOUSMETAL OR CURRENCY are allowed.");
+               return new ErrorResult("Invalid Asset Type. Only PRECIOUSMETAL OR CURRENCY are allowed.");
             }
+
+            return new SuccessResult();
         }
         /*
         private void ValidateAssetCodeAndType(Asset asset)
