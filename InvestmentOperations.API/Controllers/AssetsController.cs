@@ -25,19 +25,19 @@ namespace InvestmentOperations.API.Controllers
                 return BadRequest(result.Message);
             }
 
-            return Ok(result.Message);
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
             var result = _assetService.GetById(id);
-            if (result.Success)
+            if (!result.Success)
             {
-                return Ok(result.Message);
+                return BadRequest(result.Message); 
             }
 
-             return BadRequest(result.Message);
+             return Ok(result);
 
         }
 
@@ -50,7 +50,7 @@ namespace InvestmentOperations.API.Controllers
                 return BadRequest(result.Message);
             }
 
-            return Ok(result.Message);
+            return Ok(result);
 
         }
 
@@ -62,7 +62,7 @@ namespace InvestmentOperations.API.Controllers
             {
                 return BadRequest(result.Message);
             }
-            return Ok(result.Message);
+            return Ok(result);
         }
       
         
@@ -74,7 +74,7 @@ namespace InvestmentOperations.API.Controllers
             {
                 return BadRequest(result.Message);
             }
-            return Ok(result.Message);
+            return Ok(result);
                 
                 
         }

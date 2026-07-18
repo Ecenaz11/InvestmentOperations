@@ -37,7 +37,6 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-           // ValidateAssetCodeAndType(asset);
 
              result = CheckDuplicateAssetCode(asset.AssetCode);
             if (!result.Success)
@@ -107,15 +106,9 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
           
-            // ValidateAssetCodeAndType(asset);
+        
 
-           result =  ValidateAssetCodeChange(existingAsset,asset);
-            if(!result.Success)
-            {
-                return result;
-            }
-
-            result = CheckDuplicateAssetCode(asset.AssetCode);
+            result = CheckDuplicateAssetCode(asset.AssetCode, asset.AssetId);
             if (!result.Success)
                 return result;
            
@@ -157,7 +150,7 @@ namespace InvestmentOperations.Business.Concrete
         }
 
         
-        private IResult CheckDuplicateAssetCode(string assetCode)
+        private IResult CheckDuplicateAssetCode(string assetCode, int excludeAssetId = 0)
         {
             if (string.IsNullOrWhiteSpace(assetCode))
             {
@@ -169,7 +162,7 @@ namespace InvestmentOperations.Business.Concrete
             var allAssets = _assetDal.GetAll();
             if (allAssets != null && allAssets.Count > 0 )
             {
-                bool isDuplicate = allAssets.Any(a =>
+                bool isDuplicate = allAssets.Any(a => a.AssetId != excludeAssetId &&
                 !string.IsNullOrWhiteSpace(a.AssetCode) &&
                 string.Equals(a.AssetCode.Trim(), assetCode.Trim(), StringComparison.OrdinalIgnoreCase));
 
@@ -189,19 +182,7 @@ namespace InvestmentOperations.Business.Concrete
         }
 */
 
-        private IResult ValidateAssetCodeChange(Asset existingAsset, Asset updatedAsset)
-        {
-
-            if (existingAsset.AssetCode!=updatedAsset.AssetCode)
-            {
-                CheckDuplicateAssetCode(updatedAsset.AssetCode);
-
-            }
-            return new SuccessResult();
-
-
-            
-        }
+        
         public static bool IsNullOrWhiteSpace1([NotNullWhen(false)] string? value)
         {
             if (value == null) return false;
@@ -231,32 +212,7 @@ namespace InvestmentOperations.Business.Concrete
 
             return new SuccessResult();
         }
-        /*
-        private void ValidateAssetCodeAndType(Asset asset)
-        {
-            if(asset.AssetType=="PRECIOUSMETAL")
-            {
-                if (asset.AssetCode != "XAU" &&
-                    asset.AssetCode != "XAG" &&
-                    asset.AssetCode != "XPT" &&
-                    asset.AssetCode != "XPD")
-                {
-                    throw new Exception("This Asset Code is invalid for the Precious Metal.");
-                }
-
-                if (asset.AssetType=="CURRENCY")
-                {
-                    if (asset.AssetCode != "USD" &&
-                        asset.AssetCode != "EUR" &&
-                        asset.AssetCode != "GBP")
-                    {
-                        throw new Exception("This Asset Code is invalid for the Currency. ");
-                    }
-                }
-            }
-
-        }
-        */
+        
         #endregion
         
 
