@@ -18,80 +18,57 @@ namespace InvestmentOperations.API.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            try
+            var result = _tradeService.GetAll();
+            if (!result.Success)
             {
-                var result = _tradeService.GetAll();
-                return Ok(result);
+                return BadRequest(result.Message);  
             }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occured while listing the data:{ex.Message}");
-            }
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            try
+            var result = _tradeService.GetById(id);
+            if (!result.Success)
             {
-                var result = _tradeService.GetById(id);
-                if(result==null)
-                {
-                    return NotFound("Trade not found.");
-                }
-                return Ok(result);
+                return BadRequest(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest($"An error occured while retrieving the data: {ex.Message}");
-            }
+            return Ok(result);
         }
+       
         [HttpPost]
         public IActionResult Add(Trade trade)
         {
-            try
+            var result = _tradeService.Add(trade);
+            if (!result.Success)
             {
-                _tradeService.Add(trade);
-                return Ok("The Trade has been successfully Added.");
+                return BadRequest(result.Message);
             }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result);
         }
 
         [HttpPut]
         public IActionResult Update(Trade trade)
         {
-            try
+            var result = _tradeService.Update(trade);
+            if (!result.Success)
             {
-                _tradeService.Update(trade);
-                return Ok("The Trade has been successfully updated.");
+                return BadRequest(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result);
 
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            try
+            var result = _tradeService.Delete(id);
+            if (!result.Success)
             {
-                var trade = _tradeService.GetById(id);
-                if(trade == null)
-                {
-                    return NotFound("Trade not found");
-                }
-                _tradeService.Delete(id);
-                return Ok("The Trade has been successfully deleted.");
+                return BadRequest(result.Message);
             }
-            catch(Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result);
         }
          
     }

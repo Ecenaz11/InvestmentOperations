@@ -35,7 +35,6 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
             
-
             result = CheckDuplicateEmail(user.Email);
             if (!result.Success)
             {
