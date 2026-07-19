@@ -43,6 +43,12 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return result;
             }
+
+            result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
+            if (!result.Success)
+                
+                return result;
+        
             
             _assetDal.Add(asset);
             return new SuccessResult("Asset added successfully.");
@@ -106,15 +112,18 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
           
-        
-
             result = CheckDuplicateAssetCode(asset.AssetCode, asset.AssetId);
+            if (!result.Success)
+                return result;
+           
+            
+           
+           result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
             if (!result.Success)
                 return result;
            
             _assetDal.Update(asset);
             return new SuccessResult("Asset updated successfully.");
-
         }
 
 
@@ -175,25 +184,31 @@ namespace InvestmentOperations.Business.Concrete
 
             return new SuccessResult(); 
         }
-/*
-        private IResult CheckDuplicateAssetName(string assetName)
+
+        private IResult CheckDuplicateAssetName(string assetName, int excludeAssetId = 0)
         {
-
-        }
-*/
-
-        
-        public static bool IsNullOrWhiteSpace1([NotNullWhen(false)] string? value)
-        {
-            if (value == null) return false;
-
-            for (int i = 0; i < value.Length; i++)
+            if (string.IsNullOrWhiteSpace(assetName))
             {
-                if (!char.IsWhiteSpace(value[i])) return false;
+                return new ErrorResult("Asset Name cannot be empty");
             }
 
-            return true;
+            var allAssets = _assetDal.GetAll();
+            if (allAssets != null && allAssets.Count > 0)
+            {
+                bool isDuplicate = allAssets.Any(a => a.AssetId != excludeAssetId &&
+                !string.IsNullOrWhiteSpace(a.AssetName) &&
+                string.Equals(a.AssetName.Trim(), assetName.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                if (isDuplicate)
+                {
+                    return new ErrorResult("This Asset Name already exists.");
+                }
+
+            }
+
+            return new SuccessResult();
         }
+        
 
         private IResult ValidateAssetType(Asset asset)
         {

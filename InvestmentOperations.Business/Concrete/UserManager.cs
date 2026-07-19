@@ -21,10 +21,31 @@ namespace InvestmentOperations.Business.Concrete
 
         public IResult Add(User user)
         {
-            ValidateUser(user);
+            IResult result = ValidateUser(user);
+            if (!result.Success)
+            {
+                return result;
+            }
+
             PrepareUser(user);
-            CheckDuplicateEmail(user.Email);
-            ValidatePassword(user);
+
+            result = ValidateEmail(user.Email);
+            if (!result.Success)
+            {
+                return result;
+            }
+            
+
+            result = CheckDuplicateEmail(user.Email);
+            if (!result.Success)
+            {
+                return result;
+            }
+            result = ValidatePassword(user);
+            if (!result.Success)
+            {
+                return result;
+            }
 
             _userDal.Add(user);
 
@@ -33,7 +54,11 @@ namespace InvestmentOperations.Business.Concrete
 
         public IResult Delete(int id)
         {
-            var user = GetExistingUser(id);
+            var user = _userDal.Get(u => u.UserId == id);
+            if (user == null)
+            {
+                return new ErrorResult("User not found.");
+            }
             _userDal.Delete(user);
 
             return new SuccessResult("User deleted successfully.");
@@ -41,10 +66,12 @@ namespace InvestmentOperations.Business.Concrete
 
         public IDataResult<User> GetById(int id)
         {
-            return new SuccessDataResult<User>
-                (
-                 GetExistingUser(id), "User found."
-                );
+            var user = _userDal.Get(u => u.UserId == id);
+            if (user == null)
+            {
+                return new ErrorDataResult<User>("User not found.");
+            }
+            return new SuccessDataResult<User>(user, "User found.");
         }
 
 
@@ -58,51 +85,70 @@ namespace InvestmentOperations.Business.Concrete
 
         public IResult Update(User user)
         {
-            var existingUser = GetExistingUser(user.UserId);
+            var existingUser = _userDal.Get(u => u.UserId == user.UserId);
+            if (existingUser == null)
+            {
+                return new ErrorResult("User not found.");
+            }
+
             PrepareUser(user);
-            ValidateUser(user);
-            ValidateEmail(user.Email);
-            CheckDuplicateEmail(user.Email);
-            ValidatePassword(user);
+
+            IResult result = ValidateUser(user);
+            if (!result.Success)
+            {
+                return result;
+            }
+
+            result = ValidateEmail(user.Email);
+            if (!result.Success)
+            {
+                return result;
+            }
+
+            result = CheckDuplicateEmail(user.Email , user.UserId);
+            if (!result.Success)
+            {
+                return result;
+            }
+
+            result = ValidatePassword(user);
+            if (!result.Success)
+            {
+                return result;
+            }
 
             _userDal.Update(user);
-            return new SuccessResult("User udpated successfully.");
+            return new SuccessResult("User updated successfully.");
         }
       
       
         
         #region Validation Methods
 
-        private void ValidateUser(User user)
+        private IResult ValidateUser(User user)
         {
             if (user == null)
             {
-                throw new Exception("User cannot be empty.");
+                return new ErrorResult("User cannot be empty.");
             }
             if (string.IsNullOrWhiteSpace(user.FirstName))
             {
-                throw new Exception("First Name cannot be empty.");
+                return new ErrorResult("First Name cannot be empty.");
             }
             if (string.IsNullOrWhiteSpace(user.LastName))
             {
-                throw new Exception("Last Name Cannot be empty.");
-            }
-
-            var englishCharacterPattern = @"^[a-zA-Z0-9\s]*$";
-            if(!Regex.IsMatch(user.FirstName, englishCharacterPattern) ||
-                !Regex.IsMatch(user.LastName, englishCharacterPattern))
-            {
-                throw new Exception("Please use only English characters for names (No: ı, ş, ğ, ü, ö, ç).");
+                return new ErrorResult ("Last Name Cannot be empty.");
             }
 
             if (string.IsNullOrWhiteSpace(user.Email))
             {
-                throw new Exception("Email cannot be empty.");
+                return new ErrorResult ("Email cannot be empty.");
             }
             if (string.IsNullOrWhiteSpace(user.PasswordHash))
             {
-                throw new Exception("Password cannot be empty.");
+                return new ErrorResult ("Password cannot be empty.");
             }
+            return new SuccessResult();
         }
 
         private void PrepareUser(User user)
@@ -112,34 +158,37 @@ namespace InvestmentOperations.Business.Concrete
             user.Email = user.Email.Trim().ToLowerInvariant();
             user.PasswordHash = user.PasswordHash.ToLowerInvariant();
         }
-        private void ValidatePassword(User user)
+
+        private IResult ValidatePassword(User user)
         {
             if (user.PasswordHash.Length < 8)
             {
-                throw new Exception("The password must be at least 8 characters long.");
+                return new ErrorResult ("The password must be at least 8 characters long.");
             }
+            return new SuccessResult();
         }
 
-        private void ValidateEmail(string email)
+        private IResult ValidateEmail(string email)
         {
             if (!email.Contains("@") || !email.Contains("."))
             {
-                throw new Exception("Invalid email format.");
+                return new ErrorResult("Invalid email format.");
             }
 
             if (email.StartsWith("@") || email.EndsWith("@"))
             {
-                throw new Exception("Invalid email format.");
+                return new ErrorResult("Invalid email format.");
             }
+            return new SuccessResult();
         }
-        private void CheckDuplicateEmail(string email)
+        private IResult CheckDuplicateEmail(string email, int excludeUserId = 0)
         {
-            var user = _userDal.Get(u => u.Email == email);
+            var user = _userDal.Get(u => u.Email == email && u.UserId != excludeUserId);
             if (user != null)
             {
-                throw new Exception("This email address is already registered.");
+                return new ErrorResult ("This email address is already registered.");
             }
-
+            return new SuccessResult();
         }
 
        
