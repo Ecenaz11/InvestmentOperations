@@ -19,81 +19,57 @@ namespace InvestmentOperations.API.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            try
+            var result = _priceService.GetAll();
+            if (!result.Success)
             {
-                var result = _priceService.GetAll();
-                return Ok(result);
+                return BadRequest(result.Message);
             }
-            catch ( Exception ex)
-            {
-                return BadRequest($"An error occured while listing the data:{ex.Message}");
-            }
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            try
+            var result = _priceService.GetById(id);
+            if (!result.Success)
             {
-                var result = _priceService.GetById(id);
-                if(result ==null)
-                {
-                    return NotFound("Price not found.");
-                }
-                return Ok(result);
+                return BadRequest(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result);
         }
 
         [HttpPost]
         public IActionResult Add(Price price)
         {
-            try
+            var result = _priceService.Add(price);
+            if (!result.Success)
             {
-                _priceService.Add(price);
-                return Ok("The Price has been successfully Added.");
+                return BadRequest(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result);
         }
 
         [HttpPut]
         public IActionResult Update(Price price)
         {
-            try
+            var result = _priceService.Update(price);
+            if (!result.Success)
             {
-                _priceService.Update(price);
-                return Ok("The Price has been successfully updated.");
+                return BadRequest(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result);
 
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            try
+            var result = _priceService.Delete(id);
+            if (!result.Success)
             {
-                var price = _priceService.GetById(id);
-                if (price == null)
-                {
-                    return NotFound("Price not found.");
-                }
-                _priceService.Delete(id);
-                return Ok("The Price has been successfully deleted.");
+                return BadRequest(result.Message);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return Ok(result);
         }
     }
 }

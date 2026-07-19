@@ -24,18 +24,43 @@ namespace InvestmentOperations.Business.Concrete
         public IResult Add(Price price)
         {
             PreparePrice(price);
-            ValidatePrice(price);
-            ValidateCurrentPrice(price);
-            CheckExistingAsset(price.AssetId);
-            //CheckDuplicatePrice(price.AssetId);
+           IResult result = ValidatePrice(price);
+            if (!result.Success)
+            {
+                return result;
+            }
+             result = ValidateCurrentPrice(price);
+            if (!result.Success)
+            {
+                return result;
+            }
+
+            result = CheckExistingAsset(price.AssetId);
+            if (!result.Success)
+            {
+                return result;
+            }
+            
+            result = CheckDuplicatePrice(price.AssetId);
+            if (!result.Success)
+            {
+                return result;
+            }
             _priceDal.Add(price);
+           
             return new SuccessResult("Price added successfully.");
         }
 
         public IResult Delete(int id)
         {
-            var price = GetExistingPrice(id);
+            var price = _priceDal.Get(p => p.PriceId == id);
+            if (price == null)
+            {
+                return new ErrorResult("Price not found.");
+            }
+           
             _priceDal.Delete(price);
+           
             return new SuccessResult("Price deleted successfully.");
         }
 
@@ -49,73 +74,102 @@ namespace InvestmentOperations.Business.Concrete
 
         public IDataResult<Price> GetById(int id)
         {
-            return new SuccessDataResult<Price>
-                (
-                GetExistingPrice(id), "Price found."
-                );
+            var price = _priceDal.Get(p => p.PriceId == id);
+            if (price == null)
+            {
+                return new ErrorDataResult<Price>("Price not found.");
+            }
+            return new SuccessDataResult<Price>(price, "Price found.");
 
         }
 
         public IResult Update(Price price)
         {
-            var existingPrice = GetExistingPrice(price.PriceId);
-            ValidatePrice(price);
-            ValidateCurrentPrice(price);
-            CheckExistingAsset(price.AssetId);
+            var existingPrice = _priceDal.Get(p => p.PriceId == price.PriceId);
+            if (existingPrice == null)
+            {
+                return new ErrorResult("Price not found.");
+            }
+           IResult result = ValidatePrice(price);
+           if (!result.Success)
+            {
+                return result;
+            }
+
+           result = ValidateCurrentPrice(price);
+              if (!result.Success)
+                {
+                 return result;
+                }
+
+                result = CheckExistingAsset(price.AssetId);
+                if (!result.Success)
+            {
+                return result;
+            }
+            
             PreparePrice(price);
+           
             _priceDal.Update(price);
             return new SuccessResult("Price updated successfully.");
         }
        
         
-        #region Validation Methods
-        private void ValidatePrice(Price price)
+        
+            
+            
+            #region Validation Methods
+                private IResult ValidatePrice(Price price)
         {
             if(price ==null)
             {
-                throw new Exception("Price cannot be empty");
+                return new ErrorResult("Price cannot be empty");
             }
 
             if(price.AssetId <= 0 )
             {
-                throw new Exception("Invalid Asset.");
+                return new ErrorResult("Invalid Asset.");
             }
             
+            return new SuccessResult();
         }
 
 
         private void PreparePrice(Price price)
         {
             price.UpdatedAt = DateTime.Now;
+           
         }
 
-        private void ValidateCurrentPrice(Price price)
+        private IResult ValidateCurrentPrice(Price price)
         {
             if(price.CurrentPrice <= 0 )
             {
-                throw new Exception("");
+                return new ErrorResult(" Current Price must be greater than zero.");
             }
-        }
-
-        private void CheckExistingAsset(int assetId)
-        {
-            var asset = _assetDal.Get(asset => asset.AssetId == assetId);
-            if (asset ==null)
-            {
-                throw new Exception("Asset not found.");
-            }
+            return new SuccessResult();
         }
 
         
-
-        private void CheckDuplicatePrice(int assetId)
+        private IResult CheckDuplicatePrice(int assetId)
         {
             var price = _priceDal.Get(p => p.AssetId == assetId);
             if (price != null)
             {
-                throw new Exception("This Asset already has a price.");
+                return new ErrorResult("This Asset already has a price.");
             }
-                
+               
+                return new SuccessResult();
+        }
+
+        private IResult CheckExistingAsset(int assetId)
+        {
+            var asset = _assetDal.Get(a => a.AssetId == assetId);
+            if (asset == null)
+            {
+                return new ErrorResult("Asset not found.");
+            }
+            return new SuccessResult();
         }
 
         #endregion
