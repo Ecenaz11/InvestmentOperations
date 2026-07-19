@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\InvestmentOperation.Core\InvestmentOperation.Core.csproj" />
+    <ProjectReference Include="..\InvestmentOperations.Core\InvestmentOperations.Core.csproj" />
     <ProjectReference Include="..\InvestmentOperations.Business\InvestmentOperations.Business.csproj" />
     <ProjectReference Include="..\InvestmentOperations.DataAccess\InvestmentOperations.DataAccess.csproj" />
     <ProjectReference Include="..\InvestmentOperations.Entities\InvestmentOperations.Entities.csproj" />

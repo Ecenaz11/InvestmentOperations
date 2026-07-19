@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\InvestmentOperations.DataAccess\InvestmentOperations.DataAccess.csproj" />
     <ProjectReference Include="..\InvestmentOperations.Entities\InvestmentOperations.Entities.csproj" />
+    <ProjectReference Include="..\InvestmentOperations.Core\InvestmentOperations.Core.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿using InvestmentOperation.Core.Utilities.Results;
+﻿using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;

@@ -1,6 +1,0 @@
-@InvestmentOperations.WebAPI_HostAddress = http://localhost:5102
-
-GET {{InvestmentOperations.WebAPI_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

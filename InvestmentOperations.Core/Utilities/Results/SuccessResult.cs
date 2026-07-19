@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace InvestmentOperation.Core.Utilities.Results
+namespace InvestmentOperations.Core.Utilities.Results
 {
     public class SuccessResult : Result
     {

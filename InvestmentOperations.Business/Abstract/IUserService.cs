@@ -1,4 +1,4 @@
-﻿using InvestmentOperation.Core.Utilities.Results;
+﻿using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;

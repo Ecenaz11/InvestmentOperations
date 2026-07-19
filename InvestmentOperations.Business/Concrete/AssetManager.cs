@@ -1,4 +1,4 @@
-﻿using InvestmentOperation.Core.Utilities.Results;
+﻿using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
@@ -77,7 +77,7 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorDataResult<Asset>("Asset not found.");
             }
-            return new SuccessDataResult<Asset>(asset);
+            return new SuccessDataResult<Asset>(asset, "Asset found.");
         }
 
 
