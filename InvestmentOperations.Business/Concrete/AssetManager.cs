@@ -2,7 +2,6 @@
 using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
-using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;

@@ -1,6 +1,5 @@
 ﻿using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Entities.Concrete;
-using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;

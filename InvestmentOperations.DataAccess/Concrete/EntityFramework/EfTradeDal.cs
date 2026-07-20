@@ -4,34 +4,57 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
 {
     public class EfTradeDal : ITradeDal
     {
+        private readonly InvestmentContext _context;
+        public EfTradeDal(InvestmentContext context)
+        {
+            _context = context;
+        }
         public void Add(Trade trade)
         {
-            throw new NotImplementedException();
+           _context.Trades.Add(trade);
+           _context.SaveChanges();    
         }
 
         public void Delete(Trade trade)
         {
-            throw new NotImplementedException();
+           _context.Trades.Remove(trade);
+           _context.SaveChanges();
         }
 
         public Trade Get(Expression<Func<Trade, bool>> filter)
         {
-            throw new NotImplementedException();
+            var trade = _context.Trades.FirstOrDefault(filter);
+            return trade;
         }
 
         public List<Trade> GetAll(Expression<Func<Trade, bool>> filter = null)
         {
-            throw new NotImplementedException();
+            if (filter==null)
+            {
+                return _context.Trades.ToList();
+            }
+            else
+            {
+                return _context.Trades.Where(filter).ToList();
+            }
         }
 
         public void Update(Trade trade)
         {
-            throw new NotImplementedException();
+            var tracked = _context.ChangeTracker.Entries<Trade>().FirstOrDefault(e => e.Entity.TradeId == trade.TradeId);
+            if (tracked != null)
+            {
+                tracked.State = EntityState.Detached;
+            }
+            _context.Trades.Update(trade);
+            _context.SaveChanges();
         }
     }
 }

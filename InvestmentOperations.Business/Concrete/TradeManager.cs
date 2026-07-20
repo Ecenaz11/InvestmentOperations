@@ -49,7 +49,7 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult("Trade added successfully.");
         }
 
-      
+
 
         public IResult Delete(int id)
         {
@@ -58,12 +58,12 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult($"Trade with ID {id} does not exist.");
             }
-           
+
             _tradeDal.Delete(trade);
             return new SuccessResult("Trade deleted successfully.");
         }
-       
-       
+
+
 
         public IDataResult<List<Trade>> GetAll()
         {
@@ -93,26 +93,23 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult($"Trade with ID {trade.TradeId} does not exist.");
             }
-          
 
-          
-           IResult result =  CheckRelations(trade);
+            IResult result = CheckRelations(trade);
             if (!result.Success)
             {
                 return result;
             }
-           
-             
-            
+
+
             result = ValidateTrade(trade);
             if (!result.Success)
             {
                 return result;
-            }   
-            
+            }
+
 
             PrepareTrade(trade);
-            
+
 
             _tradeDal.Update(trade);
             return new SuccessResult("Trade updated successfully.");
@@ -122,33 +119,31 @@ namespace InvestmentOperations.Business.Concrete
 
 
         #region Validation Methods
-       
+
         private void PrepareTrade(Trade trade)
         {
-            trade.TradeDate = DateTime.Now;
+            trade.TradeDate = DateTime.UtcNow;
             trade.TotalPrice = trade.Amount * trade.UnitPrice;
             trade.TradeType = trade.TradeType.ToUpper();
         }
 
 
-        private IResult ValidateTrade (Trade trade)
+        private IResult ValidateTrade(Trade trade)
         {
             if (trade == null)
-            {
                 return new ErrorResult("Trade data cannot be empty.");
-            }
-            
+
             if (trade.Amount <= 00)
             {
                 return new ErrorResult("Trade amount must be greater than zero.");
             }
 
-            if(trade.UnitPrice <=0)
+            if (trade.UnitPrice <= 0)
             {
                 return new ErrorResult("Trade price must be greater than zero.");
             }
 
-            if ( trade.TradeType != "BUY" && trade.TradeType != "SELL")
+            if (trade.TradeType != "BUY" && trade.TradeType != "SELL")
             {
                 return new ErrorResult("Invalid trade type. Only 'BUY' or 'SELL' transaction are allowed.");
             }
@@ -162,13 +157,13 @@ namespace InvestmentOperations.Business.Concrete
             var user = _userService.GetById(trade.UserId);
             if (!user.Success)
             {
-                return new ErrorResult ($"Transaction failed. User with ID {trade.UserId} does not exist.");
+                return new ErrorResult($"Transaction failed. User with ID {trade.UserId} does not exist.");
             }
 
             var asset = _assetService.GetById(trade.AssetId);
             if (!asset.Success)
             {
-                return new ErrorResult ($"Transaction failed. Asset with ID {trade.AssetId} does not exist.");
+                return new ErrorResult($"Transaction failed. Asset with ID {trade.AssetId} does not exist.");
             }
 
             return new SuccessResult();
@@ -180,12 +175,12 @@ namespace InvestmentOperations.Business.Concrete
             var existingTrade = _tradeDal.Get(t => t.TradeId == tradeId);
             if (existingTrade != null)
             {
-                return new ErrorResult ($"A trade record with ID {tradeId} already exists.");
+                return new ErrorResult($"A trade record with ID {tradeId} already exists.");
             }
 
             return new SuccessResult();
         }
-        
+
         #endregion
     }
 

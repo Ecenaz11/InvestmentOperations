@@ -137,7 +137,7 @@ namespace InvestmentOperations.Business.Concrete
 
         private void PreparePrice(Price price)
         {
-            price.UpdatedAt = DateTime.Now;
+            price.UpdatedAt = DateTime.UtcNow;
            
         }
 

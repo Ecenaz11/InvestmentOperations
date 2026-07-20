@@ -2,7 +2,6 @@
 using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
-using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -28,6 +27,8 @@ namespace InvestmentOperations.Business.Concrete
             }
 
             PrepareUser(user);
+
+            user.CreatedAt = DateTime.UtcNow;
 
             result = ValidateEmail(user.Email);
             if (!result.Success)
