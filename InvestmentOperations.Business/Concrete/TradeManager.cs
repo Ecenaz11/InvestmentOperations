@@ -36,14 +36,13 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
+            PrepareTrade(trade);
 
             result = ValidateTrade(trade);
             if (!result.Success)
             {
                 return result;
             }
-
-            PrepareTrade(trade);
 
             _tradeDal.Add(trade);
             return new SuccessResult("Trade added successfully.");
@@ -100,16 +99,13 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
+            PrepareTrade(trade);
 
             result = ValidateTrade(trade);
             if (!result.Success)
             {
                 return result;
             }
-
-
-            PrepareTrade(trade);
-
 
             _tradeDal.Update(trade);
             return new SuccessResult("Trade updated successfully.");
@@ -122,7 +118,7 @@ namespace InvestmentOperations.Business.Concrete
 
         private void PrepareTrade(Trade trade)
         {
-            trade.TradeDate = DateTime.UtcNow;
+            trade.TradeDate = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             trade.TotalPrice = trade.Amount * trade.UnitPrice;
             trade.TradeType = trade.TradeType.ToUpper();
         }

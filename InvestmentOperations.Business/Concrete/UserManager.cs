@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -26,9 +27,21 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
+            result = ValidateEmail(user.Email);
+            if (!result.Success)
+            {
+                return result;
+            }
+
+            result = ValidatePassword(user);
+            if (!result.Success)
+            {
+                return result;
+            }
+
             PrepareUser(user);
 
-            user.CreatedAt = DateTime.UtcNow;
+            user.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             user.IsActive = true;
 
             result = ValidateEmail(user.Email);
@@ -42,11 +55,7 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return result;
             }
-            result = ValidatePassword(user);
-            if (!result.Success)
-            {
-                return result;
-            }
+            
 
             _userDal.Add(user);
 
@@ -92,9 +101,17 @@ namespace InvestmentOperations.Business.Concrete
                 return new ErrorResult("User not found.");
             }
 
+            user.CreatedAt = existingUser.CreatedAt;  
+
+            IResult result = ValidatePassword(user);
+            if (!result.Success)
+            {
+                return result;
+            }  
+
             PrepareUser(user);
 
-            IResult result = ValidateUser(user);
+             result = ValidateUser(user);
             if (!result.Success)
             {
                 return result;
@@ -112,11 +129,7 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = ValidatePassword(user);
-            if (!result.Success)
-            {
-                return result;
-            }
+            
 
             _userDal.Update(user);
             return new SuccessResult("User updated successfully.");
@@ -157,7 +170,7 @@ namespace InvestmentOperations.Business.Concrete
             user.FirstName = user.FirstName.Trim().ToLowerInvariant();
             user.LastName = user.LastName.Trim().ToLowerInvariant();
             user.Email = user.Email.Trim().ToLowerInvariant();
-            user.PasswordHash = user.PasswordHash.ToLowerInvariant();
+            user.PasswordHash = HashPassword(user.PasswordHash.Trim());
         }
 
         private IResult ValidatePassword(User user)
@@ -192,7 +205,31 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult();
         }
 
-       
+        private string HashPassword(string password)
+        {
+            byte[] salt = RandomNumberGenerator.GetBytes(16);
+            byte[] hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, 100000, HashAlgorithmName.SHA256, 32);
+            byte[] combined = new byte[salt.Length + hash.Length];
+            Array.Copy(salt, 0, combined, 0, salt.Length);
+            Array.Copy(hash, 0, combined, salt.Length, hash.Length);
+
+            return Convert.ToBase64String(combined);
+        }
+
+        private bool VerifyPassword(string password, string storedHash)
+        {
+            byte[] combined = Convert.FromBase64String(storedHash);
+
+            byte[] salt = new byte[16];
+            Array.Copy(combined, 0, salt, 0, 16);
+
+            byte[] originalHash = new byte[combined.Length - 16];
+            Array.Copy(combined, 16, originalHash, 0, originalHash.Length);
+
+            byte[] testHash = Rfc2898DeriveBytes.Pbkdf2(password, salt, 100000, HashAlgorithmName.SHA256, 32);
+
+            return CryptographicOperations.FixedTimeEquals(testHash, originalHash);
+        }
 
         #endregion
 
