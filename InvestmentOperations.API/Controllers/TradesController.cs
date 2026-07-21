@@ -2,6 +2,7 @@
 using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using InvestmentOperations.Entities.Dtos;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -38,8 +39,17 @@ namespace InvestmentOperations.API.Controllers
         }
        
         [HttpPost]
-        public IActionResult Add(Trade trade)
+        public IActionResult Add(TradeForAddDto dto)
         {
+            var trade = new Trade
+            {
+                AssetId = dto.AssetId,
+                UserId = dto.UserId,
+                Amount = dto.Amount,
+                TradeType = dto.TradeType,
+                UnitPrice = dto.UnitPrice
+            };
+
             var result = _tradeService.Add(trade);
             if (!result.Success)
             {
@@ -49,15 +59,24 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPut]
-        public IActionResult Update(Trade trade)
+        public IActionResult Update(TradeForUpdateDto dto)
         {
+            var trade = new Trade
+            {
+                TradeId = dto.TradeId,
+                AssetId = dto.AssetId,
+                UserId = dto.UserId,
+                Amount = dto.Amount,
+                TradeType = dto.TradeType,
+                UnitPrice = dto.UnitPrice
+            };
+
             var result = _tradeService.Update(trade);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
             return Ok(result);
-
         }
 
         [HttpDelete("{id}")]

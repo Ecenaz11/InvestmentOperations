@@ -3,6 +3,7 @@ using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
+using InvestmentOperations.Entities.Dtos;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -39,8 +40,14 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(Price price)
+        public IActionResult Add(PriceForAddDto dto)
         {
+            var price = new Price
+            {
+                AssetId = dto.AssetId,
+                CurrentPrice = dto.CurrentPrice
+            };
+
             var result = _priceService.Add(price);
             if (!result.Success)
             {
@@ -48,10 +55,19 @@ namespace InvestmentOperations.API.Controllers
             }
             return Ok(result);
         }
+        
+        
 
         [HttpPut]
-        public IActionResult Update(Price price)
+        public IActionResult Update(PriceForUpdateDto dto)
         {
+            var price = new Price
+            {
+                PriceId = dto.PriceId,
+                AssetId = dto.AssetId,
+                CurrentPrice = dto.CurrentPrice
+            };
+        
             var result = _priceService.Update(price);
             if (!result.Success)
             {

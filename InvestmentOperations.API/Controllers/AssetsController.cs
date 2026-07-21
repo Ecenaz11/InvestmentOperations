@@ -3,6 +3,7 @@ using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using InvestmentOperations.Entities.Dtos;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -42,21 +43,36 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(Asset asset)
+        public IActionResult Add(AssetForAddDto dto)
         {
+            var asset = new Asset
+            {
+                AssetName = dto.AssetName,
+                AssetType = dto.AssetType,
+                AssetCode = dto.AssetCode
+            };
+        
             var result = _assetService.Add(asset);
             if(!result.Success)
             {
                 return BadRequest(result.Message);
             }
 
-            return Ok(result);
+            return Ok(result);  
 
         }
 
         [HttpPut]
-        public IActionResult Update(Asset asset)
+        public IActionResult Update(AssetForUpdateDto dto)
         {
+            var asset = new Asset
+            {
+                AssetId = dto.AssetId,
+                AssetName = dto.AssetName,
+                AssetType = dto.AssetType,
+                AssetCode = dto.AssetCode
+            };
+
             var result = _assetService.Update(asset);
             if(!result.Success)
             {

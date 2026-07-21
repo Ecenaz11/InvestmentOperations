@@ -29,6 +29,7 @@ namespace InvestmentOperations.Business.Concrete
             PrepareUser(user);
 
             user.CreatedAt = DateTime.UtcNow;
+            user.IsActive = true;
 
             result = ValidateEmail(user.Email);
             if (!result.Success)

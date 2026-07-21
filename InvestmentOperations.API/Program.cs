@@ -17,7 +17,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAssetService,AssetManager>();
 builder.Services.AddScoped<IAssetDal, EfAssetDal>();
 builder.Services.AddScoped<IUserService, UserManager>();
-builder.Services.AddScoped<IUserDal, EfUserDal>();
+builder.Services.AddScoped<IUserDal, EfUserDal>();  
 builder.Services.AddScoped<ITradeService, TradeManager>();
 builder.Services.AddScoped<ITradeDal, EfTradeDal>();
 builder.Services.AddScoped<IPriceService, PriceManager>();
