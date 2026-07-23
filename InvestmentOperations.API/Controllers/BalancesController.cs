@@ -1,4 +1,5 @@
-﻿using InvestmentOperations.Business.Abstract;
+using InvestmentOperations.Business.Abstract;
+using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,85 +9,81 @@ namespace InvestmentOperations.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TradesController : ControllerBase
+    public class BalancesController : ControllerBase
     {
-        private readonly ITradeService _tradeService;
-        public TradesController(ITradeService tradeService)
+        private readonly IBalanceService _balanceService;
+        public BalancesController(IBalanceService balanceService)
         {
-            _tradeService = tradeService;
+            _balanceService = balanceService;
         }
 
         [HttpGet]
         public IActionResult GetAll()
         {
-            var result = _tradeService.GetAll();
+            var result = _balanceService.GetAllDetailed();
             if (!result.Success)
             {
-                return BadRequest(result.Message);  
+                return BadRequest(result.Message);
             }
+
             return Ok(result);
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            var result = _tradeService.GetById(id);
+            var result = _balanceService.GetByIdDetailed(id);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
+
             return Ok(result);
         }
-       
+
+
+
+        [HttpGet("user/{userId}")]
+        public IActionResult GetByUserId(int userId)
+        {
+            var result = _balanceService.GetByUserIdDetailed(userId);
+            if (!result.Success)
+            {
+                return BadRequest(result.Message);
+            }
+
+            return Ok(result);
+        }
+
         [HttpPost]
-        public IActionResult Add(TradeForAddDto dto)
+        public IActionResult Add(BalanceForAddDto dto)
         {
-            var trade = new Trade
+            var balance = new Balance
             {
-                AssetId = dto.AssetId,
                 UserId = dto.UserId,
-                Quantity = dto.Quantity,
-                TradeType = dto.TradeType,
+                AssetId = dto.AssetId,
+                Amount = dto.Amount
             };
 
-            var result = _tradeService.Add(trade);
+            var result = _balanceService.Add(balance);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
+
             return Ok(result);
         }
 
-        [HttpPut]
-        public IActionResult Update(TradeForUpdateDto dto)
+        [HttpPost("deposit")]
+        public IActionResult Deposit(BalanceForDepositDto dto)
         {
-            var trade = new Trade
-            {
-                TradeId = dto.TradeId,
-                AssetId = dto.AssetId,
-                UserId = dto.UserId,
-                Quantity = dto.Quantity,
-                TradeType = dto.TradeType,
-            };
-
-            var result = _tradeService.Update(trade);
+            var result = _balanceService.Deposit(dto.UserId, dto.Amount);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
-            return Ok(result);
-        }
 
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var result = _tradeService.Delete(id);
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
             return Ok(result);
         }
-         
     }
 }

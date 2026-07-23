@@ -70,7 +70,7 @@ namespace InvestmentOperations.DataAccess.Concrete.FileContext
             {
                 tradeToUpdate.TradeType = trade.TradeType;
                 tradeToUpdate.TradeDate = trade.TradeDate;
-                tradeToUpdate.Amount = trade.Amount;
+                tradeToUpdate.Quantity = trade.Quantity;
                 tradeToUpdate.UnitPrice = trade.UnitPrice;
                 tradeToUpdate.TotalPrice = trade.TotalPrice;
 

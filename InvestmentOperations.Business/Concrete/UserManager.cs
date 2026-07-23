@@ -4,6 +4,7 @@ using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -55,9 +56,6 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return result;
             }
-            
-
-            _userDal.Add(user);
 
             return new SuccessResult("User added successfully.");
         }

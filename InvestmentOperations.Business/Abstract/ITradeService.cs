@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using InvestmentOperations.Entities.Dtos;
+
 
 namespace InvestmentOperations.Business.Abstract
 {
@@ -12,9 +14,7 @@ namespace InvestmentOperations.Business.Abstract
         IResult Add(Trade trade);
         IResult Update(Trade trade);
         IResult Delete(int id);
-        IDataResult<List<Trade>> GetAll();
-        IDataResult<Trade> GetById(int id);
-
-
+       IDataResult<List<TradeDto>>GetAll();
+        IDataResult<TradeDto> GetById(int id);
     }
 }

@@ -64,6 +64,7 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost]
+        
         public IActionResult Add(UserForRegisterDto dto)
         {
             var user = new User

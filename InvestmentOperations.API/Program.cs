@@ -22,6 +22,8 @@ builder.Services.AddScoped<ITradeService, TradeManager>();
 builder.Services.AddScoped<ITradeDal, EfTradeDal>();
 builder.Services.AddScoped<IPriceService, PriceManager>();
 builder.Services.AddScoped<IPriceDal, EfPriceDal>();
+builder.Services.AddScoped<IBalanceService, BalanceManager>();
+builder.Services.AddScoped<IBalanceDal, EfBalanceDal>();
 
 var app = builder.Build();
 
