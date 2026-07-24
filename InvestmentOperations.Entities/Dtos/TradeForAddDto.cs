@@ -1,4 +1,5 @@
 using InvestmentOperations.Core.Entities;
+using InvestmentOperations.Entities.Enums;
 
 namespace InvestmentOperations.Entities.Dtos
 {
@@ -7,6 +8,6 @@ namespace InvestmentOperations.Entities.Dtos
         public int AssetId { get; set; }
         public int UserId { get; set; }
         public decimal Quantity { get; set; }
-        public string TradeType { get; set; }
+        public TradeType TradeType { get; set; }
     }
 }

@@ -123,9 +123,6 @@ namespace InvestmentOperations.Business.Concrete
         }
        
         
-        
-            
-            
             #region Validation Methods
                 private IResult ValidatePrice(Price price)
         {

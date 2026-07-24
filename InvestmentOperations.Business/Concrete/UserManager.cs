@@ -56,6 +56,7 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return result;
             }
+            _userDal.Add(user);
 
             return new SuccessResult("User added successfully.");
         }

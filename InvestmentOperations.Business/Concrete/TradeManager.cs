@@ -10,6 +10,7 @@ using System.Text;
 using InvestmentOperations.Entities.Dtos;
 using System.Security.Cryptography;
 using System.Reflection.Metadata.Ecma335;
+using InvestmentOperations.Entities.Enums;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -64,7 +65,7 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            if (trade.TradeType == "SELL")
+            if (trade.TradeType == TradeType.SELL)
             {
                 result = CheckSufficientBalance(trade.UserId, trade.AssetId, trade.Quantity);
                 if (!result.Success)
@@ -73,7 +74,7 @@ namespace InvestmentOperations.Business.Concrete
                 }
             }
 
-            if(trade.TradeType == "BUY")
+            if(trade.TradeType == TradeType.BUY)
             {
                 var tlAsset=GetTLAsset();
                 if(tlAsset!=null)
@@ -158,7 +159,7 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            if (trade.TradeType == "SELL")
+            if (trade.TradeType == TradeType.SELL)
             {
                 result = CheckSufficientBalance(trade.UserId, trade.AssetId, trade.Quantity);
                 if (!result.Success)
@@ -167,7 +168,7 @@ namespace InvestmentOperations.Business.Concrete
                 }
             }
 
-            if (trade.TradeType== "BUY")
+            if (trade.TradeType== TradeType.BUY)
             {
                 var tlAsset=GetTLAsset();
                 if(tlAsset!=null)
@@ -217,7 +218,6 @@ namespace InvestmentOperations.Business.Concrete
         {
             trade.TradeDate = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             trade.TotalPrice = trade.Quantity * trade.UnitPrice;
-            trade.TradeType = trade.TradeType.ToUpper();
         }
 
 
@@ -234,11 +234,6 @@ namespace InvestmentOperations.Business.Concrete
             if (trade.UnitPrice <= 0)
             {
                 return new ErrorResult("Trade price must be greater than zero.");
-            }
-
-            if (trade.TradeType != "BUY" && trade.TradeType != "SELL")
-            {
-                return new ErrorResult("Invalid trade type. Only 'BUY' or 'SELL' transaction are allowed.");
             }
 
             return new SuccessResult();
@@ -348,12 +343,12 @@ namespace InvestmentOperations.Business.Concrete
                 return;
             }
 
-            if (trade.TradeType == "BUY")
+            if (trade.TradeType == TradeType.BUY)
             {
                 ApplyBalanceChange(trade.UserId, tlAsset.AssetId, -trade.TotalPrice);
                 ApplyBalanceChange(trade.UserId, trade.AssetId, trade.Quantity);
             }
-            else if (trade.TradeType == "SELL")
+            else if (trade.TradeType == TradeType.SELL)
             {
                 ApplyBalanceChange(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
                 ApplyBalanceChange(trade.UserId, trade.AssetId, -trade.Quantity);

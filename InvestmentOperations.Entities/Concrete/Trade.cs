@@ -1,4 +1,5 @@
 ﻿using InvestmentOperations.Core.Entities;
+using InvestmentOperations.Entities.Enums;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,7 +11,7 @@ namespace InvestmentOperations.Entities.Concrete
         public int TradeId { get; set; }
         public int  UserId { get; set; }
         public int  AssetId { get; set; }
-        public string TradeType { get; set; }
+        public TradeType TradeType { get; set; }
         public decimal Quantity  { get; set; }
         public  decimal  UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }

@@ -12,6 +12,7 @@ builder.Services.AddDbContext<InvestmentContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("InvestmentDb")));
 
 builder.Services.AddControllers();
+    
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IAssetService,AssetManager>();

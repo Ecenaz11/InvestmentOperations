@@ -10,9 +10,7 @@ namespace InvestmentOperations.DataAccess.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Not: users_email_key, trades_ind_01, assets_assetcode_key, fk_prices_assets,
-            // fk_trades_assets, fk_trades_users zaten veritabanında elle eklenmişti (bkz. proje notları).
-            // Bu migration sadece EF modelini onlarla eşleştiriyor, gerçekten yeni olan iki işlemi uyguluyor:
+            
             migrationBuilder.CreateIndex(
                 name: "IX_trades_assetid",
                 table: "trades",

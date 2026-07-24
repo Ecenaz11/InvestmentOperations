@@ -53,7 +53,7 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
                 entity.Property(t => t.Quantity).HasColumnName("quantity");
                 entity.Property(t => t.UnitPrice).HasColumnName("unitprice");
                 entity.Property(t => t.TotalPrice).HasColumnName("totalprice");
-                entity.Property(t => t.TradeType).HasColumnName("tradetype");
+                entity.Property(t => t.TradeType).HasColumnName("tradetype").HasConversion<string>();
                 entity.Property(t => t.TradeDate).HasColumnName("tradedate").HasColumnType("timestamp without time zone");
                 entity.HasIndex(t=>t.UserId).HasDatabaseName("trades_ind_01");
                 entity.HasOne<Asset>().WithMany().HasForeignKey(t=>t.AssetId).HasConstraintName("fk_trades_assets").OnDelete(DeleteBehavior.NoAction);
