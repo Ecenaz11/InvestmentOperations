@@ -15,7 +15,7 @@ namespace InvestmentOperations.DataAccess.Migrations
     [Migration("20260722120125_RenameTradeAmountToQuantity")]
     partial class RenameTradeAmountToQuantity
     {
-        /// <inheritdoc />
+        
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618

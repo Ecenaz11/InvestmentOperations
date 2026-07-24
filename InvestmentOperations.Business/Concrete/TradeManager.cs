@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Text;
 using InvestmentOperations.Entities.Dtos;
 using System.Security.Cryptography;
+using System.Reflection.Metadata.Ecma335;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -70,6 +71,20 @@ namespace InvestmentOperations.Business.Concrete
                 {
                     return result;
                 }
+            }
+
+            if(trade.TradeType == "BUY")
+            {
+                var tlAsset=GetTLAsset();
+                if(tlAsset!=null)
+                {
+                  result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId,trade.TotalPrice );
+                  if(!result.Success)
+                 {
+                    return result;
+                 }
+                }
+                
             }
 
             _tradeDal.Add(trade);
@@ -150,6 +165,21 @@ namespace InvestmentOperations.Business.Concrete
                 {
                     return result;
                 }
+            }
+
+            if (trade.TradeType== "BUY")
+            {
+                var tlAsset=GetTLAsset();
+                if(tlAsset!=null)
+                {
+                  result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
+                  if(!result.Success)
+                    {
+                        return result;
+                    }
+                   
+                }
+               
             }
 
             _tradeDal.Update(trade);
@@ -252,7 +282,7 @@ namespace InvestmentOperations.Business.Concrete
 
         private IResult SetCurrentUnitPrice(Trade trade)
         {
-            var priceResult = _priceService.GeyByAssetId(trade.AssetId);
+            var priceResult = _priceService.GetByAssetId(trade.AssetId);
             if (!priceResult.Success)
             {
                 return new ErrorResult("No current price was found for this asset.");
@@ -267,7 +297,7 @@ namespace InvestmentOperations.Business.Concrete
             var tlAsset = GetTLAsset();
             if (tlAsset != null && assetId == tlAsset.AssetId)
             {
-                return new ErrorResult("TL doğrudan trade edilemez.");
+                return new ErrorResult("TL cannot be traded directly.");
             }
 
             return new SuccessResult();
@@ -281,7 +311,7 @@ namespace InvestmentOperations.Business.Concrete
 
             if (currentAmount < requiredAmount)
             {
-                return new ErrorResult("Yetersiz bakiye. Bu işlem için yeterli miktarda varlığınız bulunmuyor.");
+                return new ErrorResult("Insufficient balance. You do not have enough of this asset for this transaction.");
             }
 
             return new SuccessResult();

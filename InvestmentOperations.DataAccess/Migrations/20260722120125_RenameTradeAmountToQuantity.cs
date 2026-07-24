@@ -4,7 +4,7 @@
 
 namespace InvestmentOperations.DataAccess.Migrations
 {
-    /// <inheritdoc />
+    
     public partial class RenameTradeAmountToQuantity : Migration
     {
         /// <inheritdoc />
@@ -16,7 +16,7 @@ namespace InvestmentOperations.DataAccess.Migrations
                 newName: "quantity");
         }
 
-        /// <inheritdoc />
+       
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameColumn(

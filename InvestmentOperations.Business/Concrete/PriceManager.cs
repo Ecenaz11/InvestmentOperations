@@ -71,9 +71,6 @@ namespace InvestmentOperations.Business.Concrete
                 _priceDal.GetAll(), "Prices listed."
                 );
         }
-
-       
-
         public IDataResult<Price> GetById(int id)
         {
             var price = _priceDal.Get(p => p.PriceId == id);
@@ -82,10 +79,9 @@ namespace InvestmentOperations.Business.Concrete
                 return new ErrorDataResult<Price>("Price not found.");
             }
             return new SuccessDataResult<Price>(price, "Price found.");
-
         }
 
-        public IDataResult<Price> GeyByAssetId(int assetId)
+        public IDataResult<Price> GetByAssetId(int assetId)
         {
             var price = _priceDal.Get(p => p.AssetId == assetId);
             if (price ==null)

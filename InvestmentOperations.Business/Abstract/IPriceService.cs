@@ -14,7 +14,7 @@ namespace InvestmentOperations.Business.Abstract
         IResult Delete(int id);
         IDataResult<Price> GetById(int id);
         IDataResult<List<Price>> GetAll();
-        IDataResult<Price> GeyByAssetId(int assetId);
+        IDataResult<Price> GetByAssetId(int assetId);
 
 
     }
