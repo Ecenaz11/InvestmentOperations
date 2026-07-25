@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Security.AccessControl;
 using System.Text;
+using InvestmentOperations.Entities.Dtos;
+using Microsoft.VisualBasic;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -64,21 +66,21 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult("Price deleted successfully.");
         }
 
-        public IDataResult<List<Price>> GetAll()
+        public IDataResult<PriceDto>GetById(int id)
         {
-            return new SuccessDataResult<List<Price>>
-                (
-                _priceDal.GetAll(), "Prices listed."
-                );
-        }
-        public IDataResult<Price> GetById(int id)
-        {
-            var price = _priceDal.Get(p => p.PriceId == id);
-            if (price == null)
+            var price = _priceDal.Get(p => p.PriceId==id);
+            if (price ==null)
             {
-                return new ErrorDataResult<Price>("Price not found.");
+                return new ErrorDataResult<PriceDto>("Price not found");
             }
-            return new SuccessDataResult<Price>(price, "Price found.");
+            return new SuccessDataResult<PriceDto>(MapToDto(price), "Price found.");
+        }
+
+         public IDataResult<List<PriceDto>>GetAll()
+        {
+            var prices = _priceDal.GetAll();
+            var dtos = prices.Select(MapToDto).ToList();
+            return new SuccessDataResult<List<PriceDto>>(dtos, "Prices listed.");
         }
 
         public IDataResult<Price> GetByAssetId(int assetId)
@@ -121,8 +123,20 @@ namespace InvestmentOperations.Business.Concrete
             _priceDal.Update(price);
             return new SuccessResult("Price updated successfully.");
         }
-       
-        
+
+        private PriceDto MapToDto(Price price)
+        {
+            var asset = _assetDal.Get(a=> a.AssetId==price.AssetId);
+            return new PriceDto
+            {
+                PriceId = price.PriceId,
+                AssetName = asset?.AssetName,
+                AssetCode = asset?.AssetCode,
+                AssetType = asset?.AssetType,
+                CurrentPrice = price.CurrentPrice,
+                UpdatedAt = price.UpdatedAt
+            };
+        }
             #region Validation Methods
                 private IResult ValidatePrice(Price price)
         {

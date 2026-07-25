@@ -1,5 +1,6 @@
 ﻿using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Entities.Concrete;
+using InvestmentOperations.Entities.Dtos;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -12,10 +13,8 @@ namespace InvestmentOperations.Business.Abstract
         IResult Add(Price price);
         IResult Update(Price price);
         IResult Delete(int id);
-        IDataResult<Price> GetById(int id);
-        IDataResult<List<Price>> GetAll();
+        IDataResult<PriceDto> GetById(int id);
+        IDataResult<List<PriceDto>> GetAll();
         IDataResult<Price> GetByAssetId(int assetId);
-
-
     }
 }
