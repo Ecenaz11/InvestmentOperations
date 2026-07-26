@@ -17,6 +17,7 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
         public DbSet<Price> Prices { get; set; }
         public DbSet<Trade> Trades { get; set; }
         public DbSet<Balance> Balances { get; set; }
+        public DbSet<Log> Logs {get;set;}
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -82,6 +83,17 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
                 entity.HasIndex(b=>new{b.UserId, b.AssetId,}) .IsUnique();
                 entity.HasOne<User>().WithMany().HasForeignKey(b=> b.UserId).OnDelete(DeleteBehavior.NoAction);
                 entity.HasOne<Asset>().WithMany().HasForeignKey(b=>b.AssetId).OnDelete(DeleteBehavior.NoAction);
+            });
+
+            modelBuilder.Entity<Log>(entity=>
+            {
+                entity.ToTable("logs");
+                entity.Property(l=>l.LogId).HasColumnName("logid");
+                entity.Property(l=>l.UserId).HasColumnName("userid");
+                entity.Property(l=>l.Action).HasColumnName("action");
+                entity.Property(l=>l.Details).HasColumnName("details");
+                entity.Property(l=>l.CreatedAt).HasColumnName("createdat").HasColumnType("timestamp without time zone");
+                entity.HasIndex(l=>l.UserId).HasDatabaseName("logs_ind_01");
             });
         }
     }

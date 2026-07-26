@@ -11,6 +11,7 @@ using InvestmentOperations.Entities.Dtos;
 using System.Security.Cryptography;
 using System.Reflection.Metadata.Ecma335;
 using InvestmentOperations.Entities.Enums;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -21,13 +22,15 @@ namespace InvestmentOperations.Business.Concrete
         private readonly IAssetService _assetService;
         private readonly IBalanceService _balanceService;
         private readonly IPriceService _priceService;
-        public TradeManager(ITradeDal tradeDal, IUserService userService, IAssetService assetService, IBalanceService balanceService, IPriceService priceService)
+        private readonly ILogService _logService;
+        public TradeManager(ITradeDal tradeDal, IUserService userService, IAssetService assetService, IBalanceService balanceService, IPriceService priceService, ILogService logService)
         {
             _tradeDal = tradeDal;
             _assetService = assetService;
             _userService = userService;
             _balanceService = balanceService;
             _priceService = priceService;
+            _logService = logService;
         }
 
         public IResult Add(Trade trade)
@@ -70,6 +73,13 @@ namespace InvestmentOperations.Business.Concrete
                 result = CheckSufficientBalance(trade.UserId, trade.AssetId, trade.Quantity);
                 if (!result.Success)
                 {
+                    var asset = _assetService.GetById(trade.AssetId).Data;
+                    _logService.Add(new Log
+                    {
+                        UserId=trade.UserId,
+                        Action="TradeAddFailed",
+                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}"
+                    });
                     return result;
                 }
             }
@@ -82,6 +92,14 @@ namespace InvestmentOperations.Business.Concrete
                   result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId,trade.TotalPrice );
                   if(!result.Success)
                  {
+                    _logService.Add(new Log
+                    {
+                        UserId=trade.UserId,
+                        Action="TradeAddFailed",
+                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}"
+                    });
+                    
+
                     return result;
                  }
                 }
@@ -90,7 +108,14 @@ namespace InvestmentOperations.Business.Concrete
 
             _tradeDal.Add(trade);
 
-            UpdateBalancesAfterTrade(trade);
+            UpdateBalancesAfterTrade(trade);          
+          
+           _logService.Add(new Log
+           {
+               UserId = trade.UserId,
+               Action="TradeAdded",
+               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}"
+           });
 
             return new SuccessResult("Trade added successfully.");
         }
@@ -106,6 +131,14 @@ namespace InvestmentOperations.Business.Concrete
             }
 
             _tradeDal.Delete(trade);
+            
+            _logService.Add(new Log
+            {
+                UserId = trade.UserId,
+               Action="TradeDeleted",
+               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}"
+            });
+            
             return new SuccessResult("Trade deleted successfully.");
         }
 
@@ -164,6 +197,14 @@ namespace InvestmentOperations.Business.Concrete
                 result = CheckSufficientBalance(trade.UserId, trade.AssetId, trade.Quantity);
                 if (!result.Success)
                 {
+                    var asset = _assetService.GetById(trade.AssetId).Data;
+                    _logService.Add(new Log
+                    {
+                        UserId=trade.UserId,
+                        Action="TradeUpdateFailed",
+                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}"
+                    });
+
                     return result;
                 }
             }
@@ -176,6 +217,12 @@ namespace InvestmentOperations.Business.Concrete
                   result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
                   if(!result.Success)
                     {
+                        _logService.Add(new Log
+                    {
+                        UserId=trade.UserId,
+                        Action="TradeUpdateFailed",
+                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}"
+                    });
                         return result;
                     }
                    
@@ -185,7 +232,14 @@ namespace InvestmentOperations.Business.Concrete
 
             _tradeDal.Update(trade);
 
-            UpdateBalancesAfterTrade(trade);
+            UpdateBalancesAfterTrade(trade);          
+          
+           _logService.Add(new Log
+           {
+               UserId = trade.UserId,
+               Action="TradeUpdated",
+               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}"
+           });
 
             return new SuccessResult("Trade updated successfully.");
         }

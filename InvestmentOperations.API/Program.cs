@@ -25,6 +25,8 @@ builder.Services.AddScoped<IPriceService, PriceManager>();
 builder.Services.AddScoped<IPriceDal, EfPriceDal>();
 builder.Services.AddScoped<IBalanceService, BalanceManager>();
 builder.Services.AddScoped<IBalanceDal, EfBalanceDal>();
+builder.Services.AddScoped<ILogService, LogManager>();
+builder.Services.AddScoped<ILogDal, EfLogDal>();
 
 var app = builder.Build();
 

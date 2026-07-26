@@ -15,9 +15,11 @@ namespace InvestmentOperations.Business.Concrete
     public class UserManager : IUserService
     {
         private readonly IUserDal _userDal;
-        public UserManager(IUserDal userDal)
+        private readonly ILogService _logService;
+        public UserManager(IUserDal userDal, ILogService logService)
         {
             _userDal = userDal;
+            _logService = logService;
         }
 
         public IResult Add(User user)
@@ -58,6 +60,13 @@ namespace InvestmentOperations.Business.Concrete
             }
             _userDal.Add(user);
 
+            _logService.Add(new Log
+            {
+                UserId = user.UserId,
+                Action = "UserRegistered",
+                Details = $"{user.FirstName} {user.LastName} ({user.Email}) registered."
+            });
+
             return new SuccessResult("User added successfully.");
         }
 
@@ -69,6 +78,13 @@ namespace InvestmentOperations.Business.Concrete
                 return new ErrorResult("User not found.");
             }
             _userDal.Delete(user);
+
+            _logService.Add(new Log
+            {
+                UserId=user.UserId,
+                Action="UserDeleted",
+                Details=$"{user.FirstName} {user.LastName} ({user.Email}) deleted."
+            });
 
             return new SuccessResult("User deleted successfully.");
         }
@@ -128,9 +144,16 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            
-
             _userDal.Update(user);
+          _logService.Add(new Log
+          {
+                UserId=user.UserId,
+                Action="UserUpdated",
+                Details=$"{user.FirstName} {user.LastName} ({user.Email}) updated."
+           
+          });
+           
+           
             return new SuccessResult("User updated successfully.");
         }
       

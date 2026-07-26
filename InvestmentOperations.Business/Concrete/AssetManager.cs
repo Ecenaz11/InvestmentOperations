@@ -36,7 +36,6 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-
              result = CheckDuplicateAssetCode(asset.AssetCode);
             if (!result.Success)
             {
