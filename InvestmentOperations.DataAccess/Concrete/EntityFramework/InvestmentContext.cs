@@ -94,6 +94,7 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
                 entity.Property(l=>l.Details).HasColumnName("details");
                 entity.Property(l=>l.CreatedAt).HasColumnName("createdat").HasColumnType("timestamp without time zone");
                 entity.HasIndex(l=>l.UserId).HasDatabaseName("logs_ind_01");
+                entity.Property(l=>l.Status).HasColumnName("status");
             });
         }
     }

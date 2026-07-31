@@ -57,7 +57,8 @@ namespace InvestmentOperations.API.Controllers
                 UserId = log.UserId,
                 Action=log.Action,
                 Details=log.Details,
-                CreatedAt=log.CreatedAt
+                CreatedAt=log.CreatedAt,
+                Status = log.Status
             };
         }
 

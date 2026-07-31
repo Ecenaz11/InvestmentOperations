@@ -78,7 +78,8 @@ namespace InvestmentOperations.Business.Concrete
                     {
                         UserId=trade.UserId,
                         Action="TradeAddFailed",
-                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}"
+                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}",
+                        Status = LogStatus.Failed
                     });
                     return result;
                 }
@@ -96,7 +97,9 @@ namespace InvestmentOperations.Business.Concrete
                     {
                         UserId=trade.UserId,
                         Action="TradeAddFailed",
-                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}"
+                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}",
+                        Status = LogStatus.Failed
+
                     });
                     
 
@@ -114,7 +117,8 @@ namespace InvestmentOperations.Business.Concrete
            {
                UserId = trade.UserId,
                Action="TradeAdded",
-               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}"
+               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
+               Status = LogStatus.Success
            });
 
             return new SuccessResult("Trade added successfully.");
@@ -134,9 +138,10 @@ namespace InvestmentOperations.Business.Concrete
             
             _logService.Add(new Log
             {
-                UserId = trade.UserId,
+               UserId = trade.UserId,
                Action="TradeDeleted",
-               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}"
+               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
+               Status = LogStatus.Success
             });
             
             return new SuccessResult("Trade deleted successfully.");
@@ -202,7 +207,9 @@ namespace InvestmentOperations.Business.Concrete
                     {
                         UserId=trade.UserId,
                         Action="TradeUpdateFailed",
-                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}"
+                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}",
+                        Status = LogStatus.Failed
+
                     });
 
                     return result;
@@ -221,7 +228,9 @@ namespace InvestmentOperations.Business.Concrete
                     {
                         UserId=trade.UserId,
                         Action="TradeUpdateFailed",
-                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}"
+                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}",
+                        Status = LogStatus.Failed
+
                     });
                         return result;
                     }
@@ -238,7 +247,8 @@ namespace InvestmentOperations.Business.Concrete
            {
                UserId = trade.UserId,
                Action="TradeUpdated",
-               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}"
+               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
+               Status = LogStatus.Success
            });
 
             return new SuccessResult("Trade updated successfully.");

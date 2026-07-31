@@ -9,6 +9,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
+using InvestmentOperations.Entities.Enums;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -64,7 +65,8 @@ namespace InvestmentOperations.Business.Concrete
             {
                 UserId = user.UserId,
                 Action = "UserRegistered",
-                Details = $"{user.FirstName} {user.LastName} ({user.Email}) registered."
+                Details = $"{user.FirstName} {user.LastName} ({user.Email}) registered.",
+                Status = LogStatus.Success
             });
 
             return new SuccessResult("User added successfully.");
@@ -83,7 +85,8 @@ namespace InvestmentOperations.Business.Concrete
             {
                 UserId=user.UserId,
                 Action="UserDeleted",
-                Details=$"{user.FirstName} {user.LastName} ({user.Email}) deleted."
+                Details=$"{user.FirstName} {user.LastName} ({user.Email}) deleted.",
+                Status = LogStatus.Success
             });
 
             return new SuccessResult("User deleted successfully.");
@@ -149,10 +152,9 @@ namespace InvestmentOperations.Business.Concrete
           {
                 UserId=user.UserId,
                 Action="UserUpdated",
-                Details=$"{user.FirstName} {user.LastName} ({user.Email}) updated."
-           
-          });
-           
+                Details=$"{user.FirstName} {user.LastName} ({user.Email}) updated.",
+                Status = LogStatus.Success
+            });
            
             return new SuccessResult("User updated successfully.");
         }
