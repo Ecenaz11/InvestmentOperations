@@ -10,6 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using InvestmentOperations.Entities.Enums;
+using InvestmentOperations.Entities.Dtos;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -157,6 +158,56 @@ namespace InvestmentOperations.Business.Concrete
             });
            
             return new SuccessResult("User updated successfully.");
+        }
+
+        public IDataResult<User> Login(UserForLoginDto dto)
+        {
+            var user = _userDal.Get(u=> u.Email == dto.Email.Trim().ToLowerInvariant());
+            if(user==null)
+            {
+                _logService.Add(new Log
+                {
+                    UserId = 0,
+                    Action = "UserLoginFailed",
+                    Details = $"Login attempt failed for email: {dto.Email}. User not found.",
+                    Status = LogStatus.Failed
+                });
+                return new ErrorDataResult<User>("Email or password is incorrect.");
+            }
+
+            bool passwordcorrect = VerifyPassword(dto.Password, user.PasswordHash);
+            if(!passwordcorrect)
+            {
+                _logService.Add(new Log
+                {
+                    UserId = user.UserId,
+                    Action = "UserLoginFailed",
+                    Details = $"Incorrect password for {user.Email}.",
+                    Status = LogStatus.Failed
+                });
+                return new ErrorDataResult<User>("Email or password is incorrect.");
+            }
+            if (!user.IsActive)
+            {
+                _logService.Add(new Log
+                {
+                    UserId = user.UserId,
+                    Action = "UserLoginFailed",
+                    Details = $"Login attempt for inactive account : {user.Email}.",
+                    Status = LogStatus.Failed
+                });
+                return new ErrorDataResult<User>("User account is inactive.");
+            }
+
+            _logService.Add(new Log
+            {
+                UserId = user.UserId,
+                Action = "UserLoggedIn",
+                Details = $"{user.FirstName} {user.LastName} ({user.Email}) logged in",
+                Status = LogStatus.Success
+            });
+
+            return new SuccessDataResult<User>(user, "Login successful.");
         }
       
       

@@ -31,10 +31,12 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
                 entity.Property(u => u.PasswordHash).HasColumnName("passwordhash");
                 entity.Property(u => u.CreatedAt).HasColumnName("createdat").HasColumnType("timestamp without time zone");
                 entity.Property(u => u.IsActive).HasColumnName("isactive");
+                entity.Property(u=> u.Role).HasColumnName("role");
                 entity.HasIndex(u=>u.Email).IsUnique().HasDatabaseName("users_email_key");
+
             });
 
-            modelBuilder.Entity<Asset>(entity =>
+            modelBuilder.Entity<Asset>(entity => 
             {
                 entity.ToTable("assets");
                 entity.Property(a => a.AssetId).HasColumnName("assetid");

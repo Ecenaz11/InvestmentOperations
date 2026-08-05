@@ -3,6 +3,7 @@ using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
+using Microsoft.AspNetCore.Authorization;
 namespace InvestmentOperations.API.Controllers
 {
     [Route("api/[controller]")]
@@ -61,26 +62,6 @@ namespace InvestmentOperations.API.Controllers
                 CreatedAt = result.Data.CreatedAt
             };
             return Ok(userDto);
-        }
-
-        [HttpPost]
-        
-        public IActionResult Add(UserForRegisterDto dto)
-        {
-            var user = new User
-            {
-                FirstName = dto.FirstName,
-                LastName = dto.LastName,
-                Email = dto.Email,
-                PasswordHash = dto.Password
-            };
-
-            var result = _userService.Add(user);
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
-            return Ok(result);
         }
 
         [HttpPut]

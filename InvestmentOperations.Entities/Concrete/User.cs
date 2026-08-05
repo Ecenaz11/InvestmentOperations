@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using InvestmentOperations.Entities.Enums;
 
 namespace InvestmentOperations.Entities.Concrete
 {
@@ -14,5 +15,6 @@ namespace InvestmentOperations.Entities.Concrete
         public  string PasswordHash  { get; set; }
         public  DateTime CreatedAt { get; set; }
         public  bool IsActive { get; set; }
+        public Role Role { get; set; }
     }
 }
