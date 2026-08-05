@@ -6,6 +6,7 @@ using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Authorization;
 namespace InvestmentOperations.API.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
 using InvestmentOperations.Entities.Dtos;
+using Microsoft.AspNetCore.Authorization;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -40,6 +41,7 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult Add(PriceForAddDto dto)
         {
             var price = new Price
@@ -59,6 +61,7 @@ namespace InvestmentOperations.API.Controllers
         
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public IActionResult Update(PriceForUpdateDto dto)
         {
             var price = new Price
@@ -78,6 +81,7 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
             var result = _priceService.Delete(id);

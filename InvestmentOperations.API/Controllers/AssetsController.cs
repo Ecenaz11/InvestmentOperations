@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
+using Microsoft.AspNetCore.Authorization;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -41,8 +42,9 @@ namespace InvestmentOperations.API.Controllers
              return Ok(result);
 
         }
-
+        
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult Add(AssetForAddDto dto)
         {
             var asset = new Asset
@@ -63,6 +65,7 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public IActionResult Update(AssetForUpdateDto dto)
         {
             var asset = new Asset
@@ -83,6 +86,7 @@ namespace InvestmentOperations.API.Controllers
       
         
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
             var result = _assetService.Delete(id);
