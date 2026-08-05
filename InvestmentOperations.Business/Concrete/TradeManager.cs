@@ -153,6 +153,12 @@ namespace InvestmentOperations.Business.Concrete
             var dtos = trades.Select(MapToDto).ToList();
             return new SuccessDataResult<List<TradeDto>>(dtos, "Trades listed.");
         }
+        public IDataResult<List<TradeDto>> GetByUserId(int userId)
+        {
+            var trades = _tradeDal.GetAll(t => t.UserId == userId);
+            var dtos = trades.Select(MapToDto).ToList();
+            return new SuccessDataResult<List<TradeDto>>(dtos, "Trades listed.");
+        }
 
         public IDataResult<TradeDto> GetById(int id)
         {
@@ -418,6 +424,8 @@ namespace InvestmentOperations.Business.Concrete
                 ApplyBalanceChange(trade.UserId, trade.AssetId, -trade.Quantity);
             }
         }
+
+        
 
         #endregion
     }

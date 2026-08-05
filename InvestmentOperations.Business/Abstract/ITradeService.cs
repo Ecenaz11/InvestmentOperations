@@ -16,5 +16,6 @@ namespace InvestmentOperations.Business.Abstract
         IResult Delete(int id);
        IDataResult<List<TradeDto>>GetAll();
         IDataResult<TradeDto> GetById(int id);
+        IDataResult<List<TradeDto>> GetByUserId(int userId);
     }
 }

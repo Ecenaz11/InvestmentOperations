@@ -3,6 +3,8 @@ using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
+using InvestmentOperations.Core.Utilities.Results;
+
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -19,7 +21,16 @@ namespace InvestmentOperations.API.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var result = _tradeService.GetAll();
+            IDataResult<List<TradeDto>> result;
+            if(User.IsInRole("Admin"))
+            {
+                result = _tradeService.GetAll();
+            }
+            else
+            {
+                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                result = _tradeService.GetByUserId(callerId);
+            }
             if (!result.Success)
             {
                 return BadRequest(result.Message);  
@@ -35,12 +46,28 @@ namespace InvestmentOperations.API.Controllers
             {
                 return BadRequest(result.Message);
             }
+            if (!User.IsInRole("Admin"))
+            {
+                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if(callerId!= result.Data.UserId)
+                {
+                    return Forbid();
+                }
+            }
             return Ok(result);
         }
        
         [HttpPost]
         public IActionResult Add(TradeForAddDto dto)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if(callerId!= dto.UserId)
+                {
+                    return Forbid();
+                }
+            }
             var trade = new Trade
             {
                 AssetId = dto.AssetId,
@@ -60,6 +87,15 @@ namespace InvestmentOperations.API.Controllers
         [HttpPut]
         public IActionResult Update(TradeForUpdateDto dto)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                var existing = _tradeService.GetById(dto.TradeId);
+                if (!existing.Success || existing.Data.UserId != callerId)
+                {
+                    return Forbid();
+                }
+            }
             var trade = new Trade
             {
                 TradeId = dto.TradeId,
@@ -80,6 +116,16 @@ namespace InvestmentOperations.API.Controllers
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                var existing = _tradeService.GetById(id);
+                if (!existing.Success || existing.Data.UserId != callerId)
+                {
+                    return Forbid();
+                }
+            }
+
             var result = _tradeService.Delete(id);
             if (!result.Success)
             {
