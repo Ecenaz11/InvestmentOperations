@@ -18,69 +18,46 @@ namespace InvestmentOperations.API.Controllers
             _balanceService = balanceService;
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpPost("get")]
+        public IActionResult Get(BalanceQueryDto dto)
         {
-            IDataResult<List<BalanceDto>> result;
-            if(User.IsInRole("Admin"))
-            {
-                result = _balanceService.GetAllDetailed();
-            }
-            else
-            {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                result = _balanceService.GetByUserIdDetailed(callerId);
-            }
-           
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
+            var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+            bool isAdmin = User.IsInRole("Admin");
 
-
-            return Ok(result);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
-        {
-            var result = _balanceService.GetByIdDetailed(id);
-            if (!result.Success)
+            if (dto != null && dto.Id != null)
             {
-                return BadRequest(result.Message);
-            }
-            if(!User.IsInRole("Admin"))
-            {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if(callerId!= result.Data.UserId)
+                var result = _balanceService.GetByIdDetailed(dto.Id.Value);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                if (!isAdmin && result.Data.UserId != callerId)
                 {
                     return Forbid();
                 }
+                return Ok(result);
             }
 
-            return Ok(result);
-        }
-
-
-
-        [HttpGet("user/{userId}")]
-        public IActionResult GetByUserId(int userId)
-        {
-            if(!User.IsInRole("Admin"))
+            if (dto != null && dto.UserId != null)
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if(callerId!= userId)
+                if (!isAdmin && dto.UserId != callerId)
                 {
                     return Forbid();
                 }
-            }
-            var result = _balanceService.GetByUserIdDetailed(userId);
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
+                var userResult = _balanceService.GetByUserIdDetailed(dto.UserId.Value);
+                if (!userResult.Success)
+                {
+                    return BadRequest(userResult.Message);
+                }
+                return Ok(userResult);
             }
 
-            return Ok(result);
+            var allResult = isAdmin ? _balanceService.GetAllDetailed() : _balanceService.GetByUserIdDetailed(callerId);
+            if (!allResult.Success)
+            {
+                return BadRequest(allResult.Message);
+            }
+            return Ok(allResult);
         }
 
         [HttpPost]
@@ -89,7 +66,7 @@ namespace InvestmentOperations.API.Controllers
             if (!User.IsInRole("Admin"))
             {
                 var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if(dto.UserId != callerId)
+                if (dto.UserId != callerId)
                 {
                     return Forbid();
                 }
@@ -116,7 +93,7 @@ namespace InvestmentOperations.API.Controllers
             if (!User.IsInRole("Admin"))
             {
                 var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if(dto.UserId != callerId)
+                if (dto.UserId != callerId)
                 {
                     return Forbid();
                 }

@@ -210,8 +210,6 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessDataResult<User>(user, "Login successful.");
         }
       
-      
-        
         #region Validation Methods
 
         private IResult ValidateUser(User user)

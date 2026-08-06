@@ -26,12 +26,12 @@ namespace InvestmentOperations.Business.Concrete
         public IResult Add(Price price)
         {
             PreparePrice(price);
-           IResult result = ValidatePrice(price);
+            IResult result = ValidatePrice(price);
             if (!result.Success)
             {
                 return result;
             }
-             result = ValidateCurrentPrice(price);
+            result = ValidateCurrentPrice(price);
             if (!result.Success)
             {
                 return result;
@@ -42,14 +42,14 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return result;
             }
-            
+
             result = CheckDuplicatePrice(price.AssetId);
             if (!result.Success)
             {
                 return result;
             }
             _priceDal.Add(price);
-           
+
             return new SuccessResult("Price added successfully.");
         }
 
@@ -60,23 +60,23 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult("Price not found.");
             }
-           
+
             _priceDal.Delete(price);
-           
+
             return new SuccessResult("Price deleted successfully.");
         }
 
-        public IDataResult<PriceDto>GetById(int id)
+        public IDataResult<PriceDto> GetById(int id)
         {
-            var price = _priceDal.Get(p => p.PriceId==id);
-            if (price ==null)
+            var price = _priceDal.Get(p => p.PriceId == id);
+            if (price == null)
             {
                 return new ErrorDataResult<PriceDto>("Price not found");
             }
             return new SuccessDataResult<PriceDto>(MapToDto(price), "Price found.");
         }
 
-         public IDataResult<List<PriceDto>>GetAll()
+        public IDataResult<List<PriceDto>> GetAll()
         {
             var prices = _priceDal.GetAll();
             var dtos = prices.Select(MapToDto).ToList();
@@ -86,7 +86,7 @@ namespace InvestmentOperations.Business.Concrete
         public IDataResult<Price> GetByAssetId(int assetId)
         {
             var price = _priceDal.Get(p => p.AssetId == assetId);
-            if (price ==null)
+            if (price == null)
             {
                 return new ErrorDataResult<Price>("Price not found for this asset.");
             }
@@ -100,33 +100,33 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult("Price not found.");
             }
-           IResult result = ValidatePrice(price);
-           if (!result.Success)
+            IResult result = ValidatePrice(price);
+            if (!result.Success)
             {
                 return result;
             }
 
-           result = ValidateCurrentPrice(price);
-              if (!result.Success)
-                {
-                 return result;
-                }
-
-                result = CheckExistingAsset(price.AssetId);
-                if (!result.Success)
+            result = ValidateCurrentPrice(price);
+            if (!result.Success)
             {
                 return result;
             }
-            
+
+            result = CheckExistingAsset(price.AssetId);
+            if (!result.Success)
+            {
+                return result;
+            }
+
             PreparePrice(price);
-           
+
             _priceDal.Update(price);
             return new SuccessResult("Price updated successfully.");
         }
 
         private PriceDto MapToDto(Price price)
         {
-            var asset = _assetDal.Get(a=> a.AssetId==price.AssetId);
+            var asset = _assetDal.Get(a => a.AssetId == price.AssetId);
             return new PriceDto
             {
                 PriceId = price.PriceId,
@@ -137,19 +137,19 @@ namespace InvestmentOperations.Business.Concrete
                 UpdatedAt = price.UpdatedAt
             };
         }
-            #region Validation Methods
-                private IResult ValidatePrice(Price price)
+        #region Validation Methods
+        private IResult ValidatePrice(Price price)
         {
-            if(price ==null)
+            if (price == null)
             {
                 return new ErrorResult("Price cannot be empty");
             }
 
-            if(price.AssetId <= 0 )
+            if (price.AssetId <= 0)
             {
                 return new ErrorResult("Invalid Asset.");
             }
-            
+
             return new SuccessResult();
         }
 
@@ -157,19 +157,19 @@ namespace InvestmentOperations.Business.Concrete
         private void PreparePrice(Price price)
         {
             price.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-           
+
         }
 
         private IResult ValidateCurrentPrice(Price price)
         {
-            if(price.CurrentPrice <= 0 )
+            if (price.CurrentPrice <= 0)
             {
                 return new ErrorResult(" Current Price must be greater than zero.");
             }
             return new SuccessResult();
         }
 
-        
+
         private IResult CheckDuplicatePrice(int assetId)
         {
             var price = _priceDal.Get(p => p.AssetId == assetId);
@@ -177,8 +177,8 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult("This Asset already has a price.");
             }
-               
-                return new SuccessResult();
+
+            return new SuccessResult();
         }
 
         private IResult CheckExistingAsset(int assetId)

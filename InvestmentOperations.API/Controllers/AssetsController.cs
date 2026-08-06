@@ -18,29 +18,24 @@ namespace InvestmentOperations.API.Controllers
             _assetService = assetService;
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpPost("get")]
+        public IActionResult Get(AssetQueryDto dto)
         {
-            var result = _assetService.GetAll();
-            if (!result.Success)
+            if( dto== null || dto.Id ==null)
             {
-                return BadRequest(result.Message);
+                var allResult = _assetService.GetAll();
+                if(!allResult.Success)
+                {
+                    return BadRequest(allResult.Message);
+                }
+                return Ok(allResult);
             }
-
+            var result = _assetService.GetById(dto.Id.Value);
+            if(!result.Success)
+            {
+                return BadRequest(result.Message);  
+            }
             return Ok(result);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
-        {
-            var result = _assetService.GetById(id);
-            if (!result.Success)
-            {
-                return BadRequest(result.Message); 
-            }
-
-             return Ok(result);
-
         }
         
         [HttpPost]
