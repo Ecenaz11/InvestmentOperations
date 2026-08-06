@@ -18,21 +18,19 @@ namespace InvestmentOperations.API.Controllers
             _priceService = priceService;
         }
        
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpPost("get")]
+        public IActionResult Get(PriceQueryDto dto)
         {
-            var result = _priceService.GetAll();
-            if (!result.Success)
+            if(dto==null || dto.Id == null)
             {
-                return BadRequest(result.Message);
+                var allResult = _priceService.GetAll();
+                if (!allResult.Success)
+                {
+                    return BadRequest(allResult.Message);
+                }
+                return Ok(allResult);
             }
-            return Ok(result);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
-        {
-            var result = _priceService.GetById(id);
+            var result = _priceService.GetById(dto.Id.Value);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

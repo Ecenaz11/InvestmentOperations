@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using System.Linq;
+
 namespace InvestmentOperations.API.Controllers
 {
-    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -17,57 +18,66 @@ namespace InvestmentOperations.API.Controllers
             _userService = userService;
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpPost("get")]
+        public IActionResult Get(UserQueryDto dto)
         {
-           var result = _userService.GetAll();
-           if (!result.Success)
+           bool isAdmin = User.IsInRole("Admin");
+           var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+           if (dto==null || dto.Id ==null)
             {
-                return BadRequest(result.Message);
-            }
-            
-            var userDto = new List<UserDto>();
-            foreach (var user in result.Data)
-            {
-                var dto = new UserDto
+                if(!isAdmin)
                 {
-                    UserId = user.UserId,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    Email = user.Email,
-                    IsActive = user.IsActive,
-                    CreatedAt = user.CreatedAt
-                };
-                userDto.Add(dto);
+                    return Forbid();
+                }
+
+                var result = _userService.GetAll();
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+
+                var userDtos = result.Data.Select(MapToDto).ToList();
+                return Ok(userDtos);
             }
-            return Ok(userDto);
+            else
+            {
+                if(!isAdmin && dto.Id != callerId)
+                {
+                    return Forbid();
+                }
+                var singleResult = _userService.GetById(dto.Id.Value);
+                if (!singleResult.Success)
+                {
+                    return BadRequest(singleResult.Message);    
+                }
+                return Ok(MapToDto(singleResult.Data));
+            }
         }
 
-        
-
-        [HttpGet("{id}")]
-        public IActionResult Get(int id )
+         private UserDto MapToDto(User user)
         {
-            var result = _userService.GetById(id);
-            if (!result.Success)
+            return new UserDto
             {
-                return BadRequest(result.Message);
-            }
-            var userDto = new UserDto
-            {
-                UserId = result.Data.UserId,
-                FirstName = result.Data.FirstName,
-                LastName = result.Data.LastName,
-                Email = result.Data.Email,
-                IsActive = result.Data.IsActive,
-                CreatedAt = result.Data.CreatedAt
+                UserId = user.UserId,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
             };
-            return Ok(userDto);
         }
 
         [HttpPut]
         public IActionResult Update(UserForUpdateDto dto)
         {
+            if(!User.IsInRole("Admin"))
+            {
+                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+                if(dto.UserId != callerId)
+                {
+                    return Forbid();
+                }
+            }
             var user = new User
             {
                 UserId = dto.UserId,
@@ -88,6 +98,7 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
             var result = _userService.Delete(id);
@@ -97,6 +108,5 @@ namespace InvestmentOperations.API.Controllers
             }
             return Ok(result);
         }
-
     }
 }

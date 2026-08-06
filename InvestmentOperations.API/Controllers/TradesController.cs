@@ -18,43 +18,35 @@ namespace InvestmentOperations.API.Controllers
             _tradeService = tradeService;
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpPost("get")]
+        public IActionResult Get(TradeQueryDto dto)
         {
-            IDataResult<List<TradeDto>> result;
-            if(User.IsInRole("Admin"))
+            bool isAdmin = User.IsInRole("Admin");
+            var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+           
+            if (dto==null || dto.Id ==null)
             {
-                result = _tradeService.GetAll();
+                IDataResult<List<TradeDto>> result = isAdmin ? _tradeService.GetAll() : _tradeService.GetByUserId(callerId);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                return Ok(result); 
             }
             else
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                result = _tradeService.GetByUserId(callerId);
-            }
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);  
-            }
-            return Ok(result);
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult Get(int id)
-        {
-            var result = _tradeService.GetById(id);
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
-            if (!User.IsInRole("Admin"))
-            {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if(callerId!= result.Data.UserId)
+                var result = _tradeService.GetById(dto.Id.Value);
+                if (!result.Success)
+                {
+                    return BadRequest(result.Message);    
+                }
+                if(!isAdmin && result.Data.UserId != callerId)
                 {
                     return Forbid();
                 }
+                return Ok(result);
+               
             }
-            return Ok(result);
         }
        
         [HttpPost]

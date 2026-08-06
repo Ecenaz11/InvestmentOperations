@@ -4,6 +4,7 @@ using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using System.Linq;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -18,37 +19,26 @@ namespace InvestmentOperations.API.Controllers
             _logService = logService;
         }
 
-        [HttpGet]
-        public IActionResult GetAll()
+        [HttpPost("get")]
+        public IActionResult Get(LogsQueryDto dto)
         {
-            var result = _logService.GetAll();
-            if(!result.Success)
+            if(dto==null || dto.Id==null)
             {
-                return BadRequest(result.Message);
+                var result = _logService.GetAll();
+                if(!result.Success)
+                {
+                    return BadRequest(result.Message);
+                }
+                var logDtos = result.Data.Select(MapToDto).ToList();
+                return Ok(logDtos);
             }
-
-            var logDtos = new List<LogDto>();
-            foreach ( var log in result.Data)
+            var userResult = _logService.GetByUserId(dto.Id.Value);
+            if(!userResult.Success)
             {
-                logDtos.Add(MapToDto(log));
+                return BadRequest(userResult.Message);
             }
-            return Ok(logDtos);
-        }
-
-        [HttpGet("user/{userId}")]
-        public IActionResult GetByUserId(int userId)
-        {
-            var result = _logService.GetByUserId(userId);
-            if(!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
-            var logDtos = new List<LogDto>();
-            foreach (var log in result.Data)
-            {
-                logDtos.Add(MapToDto(log));
-            }
-            return Ok(logDtos);
+            var userLogDtos = userResult.Data.Select(MapToDto).ToList();
+            return Ok(userLogDtos);
         }
 
         private LogDto MapToDto(Log log)
