@@ -53,6 +53,7 @@ builder.Services.AddScoped<ITokenService, TokenManager>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, SameUserOrAdminHandler>();
 builder.Services.AddExceptionHandler<InvestmentOperations.API.Middleware.GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace InvestmentOperations.Business.Abstract
 {
-    public interface IAssetService 
+    public interface IAssetService
     {
         IDataResult<List<Asset>> GetAll();
         IDataResult<Asset> GetById(int id);

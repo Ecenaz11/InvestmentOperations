@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace InvestmentOperations.Business.Concrete
 {
-    public class AssetManager : IAssetService 
+    public class AssetManager : IAssetService
     {
         private readonly IAssetDal _assetDal;
         public AssetManager(IAssetDal assetDal)
@@ -21,22 +21,22 @@ namespace InvestmentOperations.Business.Concrete
 
         public IResult Add(Asset asset)
         {
-          IResult result  = ValidateAsset(asset);
-            if(!result.Success)
+            IResult result = ValidateAsset(asset);
+            if (!result.Success)
             {
                 return result;
             }
 
-            PrepareAsset( asset);
-           
-           
+            PrepareAsset(asset);
+
+
             result = ValidateAssetType(asset);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return result;
             }
 
-             result = CheckDuplicateAssetCode(asset.AssetCode);
+            result = CheckDuplicateAssetCode(asset.AssetCode);
             if (!result.Success)
             {
                 return result;
@@ -44,26 +44,26 @@ namespace InvestmentOperations.Business.Concrete
 
             result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
             if (!result.Success)
-                
+
                 return result;
-        
-            
+
+
             _assetDal.Add(asset);
             return new SuccessResult("Asset added successfully.");
         }
 
         public IResult Delete(int id)
         {
-            var asset = _assetDal.Get(a =>a.AssetId == id);
-           
-           if(asset==null)
+            var asset = _assetDal.Get(a => a.AssetId == id);
+
+            if (asset == null)
             {
                 return new ErrorResult("Asset not found.");
             }
-           
+
             _assetDal.Delete(asset);
-          
-            
+
+
             return new SuccessResult("Asset deleted successfully.");
 
         }
@@ -71,7 +71,7 @@ namespace InvestmentOperations.Business.Concrete
         public IDataResult<Asset> GetById(int id)
         {
             var asset = _assetDal.Get(a => a.AssetId == id);
-            if(asset==null)
+            if (asset == null)
             {
                 return new ErrorDataResult<Asset>("Asset not found.");
             }
@@ -91,42 +91,42 @@ namespace InvestmentOperations.Business.Concrete
         {
 
             var existingAsset = _assetDal.Get(a => a.AssetId == asset.AssetId);
-            if(existingAsset==null)
+            if (existingAsset == null)
             {
                 return new ErrorResult("Asset not found.");
             }
-           
-             PrepareAsset(asset);
-           
-            IResult result = ValidateAsset(asset); 
-            if(!result.Success )
+
+            PrepareAsset(asset);
+
+            IResult result = ValidateAsset(asset);
+            if (!result.Success)
             {
                 return result;
             }
-           
+
             result = ValidateAssetType(asset);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return result;
             }
-          
+
             result = CheckDuplicateAssetCode(asset.AssetCode, asset.AssetId);
             if (!result.Success)
                 return result;
-           
-            
-           
-           result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
+
+
+
+            result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
             if (!result.Success)
                 return result;
-           
+
             _assetDal.Update(asset);
             return new SuccessResult("Asset updated successfully.");
         }
 
 
-      
-        
+
+
         #region Validation Methods
 
         private IResult ValidateAsset(Asset asset)
@@ -156,18 +156,18 @@ namespace InvestmentOperations.Business.Concrete
             asset.AssetType = asset.AssetType.Trim().ToUpperInvariant();
         }
 
-        
+
         private IResult CheckDuplicateAssetCode(string assetCode, int excludeAssetId = 0)
         {
             if (string.IsNullOrWhiteSpace(assetCode))
             {
-                return new ErrorResult("Asset Code cannot be empty") ;
-  
+                return new ErrorResult("Asset Code cannot be empty");
+
             }
-            
+
 
             var allAssets = _assetDal.GetAll();
-            if (allAssets != null && allAssets.Count > 0 )
+            if (allAssets != null && allAssets.Count > 0)
             {
                 bool isDuplicate = allAssets.Any(a => a.AssetId != excludeAssetId &&
                 !string.IsNullOrWhiteSpace(a.AssetCode) &&
@@ -180,7 +180,7 @@ namespace InvestmentOperations.Business.Concrete
 
             }
 
-            return new SuccessResult(); 
+            return new SuccessResult();
         }
 
         private IResult CheckDuplicateAssetName(string assetName, int excludeAssetId = 0)
@@ -206,11 +206,11 @@ namespace InvestmentOperations.Business.Concrete
 
             return new SuccessResult();
         }
-        
+
 
         private IResult ValidateAssetType(Asset asset)
         {
-           if (string.IsNullOrWhiteSpace(asset.AssetType))
+            if (string.IsNullOrWhiteSpace(asset.AssetType))
             {
                 return new ErrorResult("Asset Type cannot be empty");
             }
@@ -218,16 +218,16 @@ namespace InvestmentOperations.Business.Concrete
             bool isPreciousMetal = string.Equals(asset.AssetType.Trim(), "PRECIOUSMETAL", StringComparison.OrdinalIgnoreCase);
             bool isCurrency = string.Equals(asset.AssetType.Trim(), "CURRENCY", StringComparison.OrdinalIgnoreCase);
 
-            if(!isPreciousMetal && !isCurrency)
+            if (!isPreciousMetal && !isCurrency)
             {
-               return new ErrorResult("Invalid Asset Type. Only PRECIOUSMETAL OR CURRENCY are allowed.");
+                return new ErrorResult("Invalid Asset Type. Only PRECIOUSMETAL OR CURRENCY are allowed.");
             }
 
             return new SuccessResult();
         }
-        
+
         #endregion
-        
+
 
     }
 

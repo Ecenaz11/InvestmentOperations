@@ -8,7 +8,7 @@ namespace InvestmentOperations.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController: ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly IUserService _userService;
         private readonly ITokenService _tokenService;
@@ -24,7 +24,7 @@ namespace InvestmentOperations.API.Controllers
         public IActionResult Login(UserForLoginDto dto)
         {
             var result = _userService.Login(dto);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return BadRequest(result.Message);
             }

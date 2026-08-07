@@ -54,7 +54,7 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return result;
             }
-            
+
             result = CheckDuplicateEmail(user.Email);
             if (!result.Success)
             {
@@ -84,9 +84,9 @@ namespace InvestmentOperations.Business.Concrete
 
             _logService.Add(new Log
             {
-                UserId=user.UserId,
-                Action="UserDeleted",
-                Details=$"{user.FirstName} {user.LastName} ({user.Email}) deleted.",
+                UserId = user.UserId,
+                Action = "UserDeleted",
+                Details = $"{user.FirstName} {user.LastName} ({user.Email}) deleted.",
                 Status = LogStatus.Success
             });
 
@@ -120,17 +120,17 @@ namespace InvestmentOperations.Business.Concrete
                 return new ErrorResult("User not found.");
             }
 
-            user.CreatedAt = existingUser.CreatedAt;  
+            user.CreatedAt = existingUser.CreatedAt;
 
             IResult result = ValidatePassword(user);
             if (!result.Success)
             {
                 return result;
-            }  
+            }
 
             PrepareUser(user);
 
-             result = ValidateUser(user);
+            result = ValidateUser(user);
             if (!result.Success)
             {
                 return result;
@@ -142,28 +142,28 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckDuplicateEmail(user.Email , user.UserId);
+            result = CheckDuplicateEmail(user.Email, user.UserId);
             if (!result.Success)
             {
                 return result;
             }
 
             _userDal.Update(user);
-          _logService.Add(new Log
-          {
-                UserId=user.UserId,
-                Action="UserUpdated",
-                Details=$"{user.FirstName} {user.LastName} ({user.Email}) updated.",
+            _logService.Add(new Log
+            {
+                UserId = user.UserId,
+                Action = "UserUpdated",
+                Details = $"{user.FirstName} {user.LastName} ({user.Email}) updated.",
                 Status = LogStatus.Success
             });
-           
+
             return new SuccessResult("User updated successfully.");
         }
 
         public IDataResult<User> Login(UserForLoginDto dto)
         {
-            var user = _userDal.Get(u=> u.Email == dto.Email.Trim().ToLowerInvariant());
-            if(user==null)
+            var user = _userDal.Get(u => u.Email == dto.Email.Trim().ToLowerInvariant());
+            if (user == null)
             {
                 _logService.Add(new Log
                 {
@@ -176,7 +176,7 @@ namespace InvestmentOperations.Business.Concrete
             }
 
             bool passwordcorrect = VerifyPassword(dto.Password, user.PasswordHash);
-            if(!passwordcorrect)
+            if (!passwordcorrect)
             {
                 _logService.Add(new Log
                 {
@@ -209,7 +209,7 @@ namespace InvestmentOperations.Business.Concrete
 
             return new SuccessDataResult<User>(user, "Login successful.");
         }
-      
+
         #region Validation Methods
 
         private IResult ValidateUser(User user)
@@ -224,16 +224,16 @@ namespace InvestmentOperations.Business.Concrete
             }
             if (string.IsNullOrWhiteSpace(user.LastName))
             {
-                return new ErrorResult ("Last Name Cannot be empty.");
+                return new ErrorResult("Last Name Cannot be empty.");
             }
 
             if (string.IsNullOrWhiteSpace(user.Email))
             {
-                return new ErrorResult ("Email cannot be empty.");
+                return new ErrorResult("Email cannot be empty.");
             }
             if (string.IsNullOrWhiteSpace(user.PasswordHash))
             {
-                return new ErrorResult ("Password cannot be empty.");
+                return new ErrorResult("Password cannot be empty.");
             }
             return new SuccessResult();
         }
@@ -250,7 +250,7 @@ namespace InvestmentOperations.Business.Concrete
         {
             if (user.PasswordHash.Length < 8)
             {
-                return new ErrorResult ("The password must be at least 8 characters long.");
+                return new ErrorResult("The password must be at least 8 characters long.");
             }
             return new SuccessResult();
         }
@@ -273,7 +273,7 @@ namespace InvestmentOperations.Business.Concrete
             var user = _userDal.Get(u => u.Email == email && u.UserId != excludeUserId);
             if (user != null)
             {
-                return new ErrorResult ("This email address is already registered.");
+                return new ErrorResult("This email address is already registered.");
             }
             return new SuccessResult();
         }
@@ -305,12 +305,6 @@ namespace InvestmentOperations.Business.Concrete
         }
 
         #endregion
-
-
-
-
-
-
     }
 
 }

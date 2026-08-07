@@ -22,10 +22,10 @@ namespace InvestmentOperations.API.Controllers
         [HttpPost("get")]
         public IActionResult Get(LogsQueryDto dto)
         {
-            if(dto==null || dto.Id==null)
+            if (dto == null || dto.Id == null)
             {
                 var result = _logService.GetAll();
-                if(!result.Success)
+                if (!result.Success)
                 {
                     return BadRequest(result.Message);
                 }
@@ -33,7 +33,7 @@ namespace InvestmentOperations.API.Controllers
                 return Ok(logDtos);
             }
             var userResult = _logService.GetByUserId(dto.Id.Value);
-            if(!userResult.Success)
+            if (!userResult.Success)
             {
                 return BadRequest(userResult.Message);
             }
@@ -47,9 +47,9 @@ namespace InvestmentOperations.API.Controllers
             {
                 LogId = log.LogId,
                 UserId = log.UserId,
-                Action=log.Action,
-                Details=log.Details,
-                CreatedAt=log.CreatedAt,
+                Action = log.Action,
+                Details = log.Details,
+                CreatedAt = log.CreatedAt,
                 Status = log.Status
             };
         }

@@ -19,13 +19,11 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
         public void Add(Balance balance)
         {
             _context.Balances.Add(balance);
-            _context.SaveChanges();
         }
 
         public void Delete(Balance balance)
         {
             _context.Balances.Remove(balance);
-            _context.SaveChanges();
         }
 
         public Balance Get(Expression<Func<Balance, bool>> filter)
@@ -54,7 +52,6 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
                 tracked.State = EntityState.Detached;
             }
             _context.Balances.Update(balance);
-            _context.SaveChanges();
         }
     }
 }

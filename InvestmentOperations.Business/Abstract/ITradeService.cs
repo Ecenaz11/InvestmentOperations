@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using System.Text;
 using InvestmentOperations.Entities.Dtos;
 
-
 namespace InvestmentOperations.Business.Abstract
 {
     public interface ITradeService
@@ -14,7 +13,7 @@ namespace InvestmentOperations.Business.Abstract
         IResult Add(Trade trade);
         IResult Update(Trade trade);
         IResult Delete(int id);
-       IDataResult<List<TradeDto>>GetAll();
+        IDataResult<List<TradeDto>> GetAll();
         IDataResult<TradeDto> GetById(int id);
         IDataResult<List<TradeDto>> GetByUserId(int userId);
     }

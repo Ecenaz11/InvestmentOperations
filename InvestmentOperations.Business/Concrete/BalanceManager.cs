@@ -17,11 +17,13 @@ namespace InvestmentOperations.Business.Concrete
         private readonly IBalanceDal _balanceDal;
         private readonly IAssetService _assetService;
         private readonly IUserService _userService;
-        public BalanceManager(IBalanceDal balanceDal, IAssetService assetService, IUserService userService)
+        private readonly IUnitOfWork _unitOfWork;
+        public BalanceManager(IBalanceDal balanceDal, IAssetService assetService, IUserService userService, IUnitOfWork unitOfWork)
         {
             _balanceDal = balanceDal;
             _assetService = assetService;
             _userService = userService;
+            _unitOfWork = unitOfWork;
         }
 
         public IResult Add(Balance balance)
@@ -41,22 +43,24 @@ namespace InvestmentOperations.Business.Concrete
             result = CheckAssetExisting(balance.AssetId);
             if (!result.Success)
             {
-                return result;  
+                return result;
             }
 
             var existingBalance = _balanceDal.Get(b => b.UserId == balance.UserId && b.AssetId == balance.AssetId);
             if (existingBalance != null)
             {
-               existingBalance.Amount += balance.Amount;
+                existingBalance.Amount += balance.Amount;
                 PrepareBalance(existingBalance);
-                _balanceDal.Update(existingBalance);    
+                _balanceDal.Update(existingBalance);
+                _unitOfWork.SaveChanges();
                 return new SuccessResult("Balance updated successfully.");
-               
+
             }
 
             PrepareBalance(balance);
 
             _balanceDal.Add(balance);
+            _unitOfWork.SaveChanges();
             return new SuccessResult("Balance added successfully.");
         }
 
@@ -87,6 +91,7 @@ namespace InvestmentOperations.Business.Concrete
             }
 
             _balanceDal.Delete(balance);
+            _unitOfWork.SaveChanges();
             return new SuccessResult("Balance deleted successfully.");
         }
 
@@ -102,18 +107,18 @@ namespace InvestmentOperations.Business.Concrete
         {
             var balance = _balanceDal.GetAll();
             var dtos = balance.Select(MapToDto).ToList();
-           
+
             return new SuccessDataResult<List<BalanceDto>>(dtos, "Balances listed.");
         }
 
         public IDataResult<BalanceDto> GetByIdDetailed(int id)
         {
             var balance = _balanceDal.Get(b => b.BalanceId == id);
-            if(balance==null)
+            if (balance == null)
             {
                 return new ErrorDataResult<BalanceDto>("Balance not found.");
             }
-           
+
             return new SuccessDataResult<BalanceDto>(MapToDto(balance), "Balance found.");
         }
 
@@ -141,10 +146,9 @@ namespace InvestmentOperations.Business.Concrete
             }
 
             _balanceDal.Update(balance);
+            _unitOfWork.SaveChanges();
             return new SuccessResult("Balance updated successfully.");
         }
-
-
         private BalanceDto MapToDto(Balance balance)
         {
             var asset = _assetService.GetById(balance.AssetId).Data;
@@ -162,7 +166,6 @@ namespace InvestmentOperations.Business.Concrete
 
 
         #region Validation Methods
-
         private IResult ValidateBalance(Balance balance)
         {
             if (balance == null)
@@ -187,7 +190,6 @@ namespace InvestmentOperations.Business.Concrete
 
             return new SuccessResult();
         }
-
         private void PrepareBalance(Balance balance)
         {
             balance.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);

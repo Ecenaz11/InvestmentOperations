@@ -19,13 +19,11 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
         public void Add(Trade trade)
         {
            _context.Trades.Add(trade);
-           _context.SaveChanges();    
         }
 
         public void Delete(Trade trade)
         {
            _context.Trades.Remove(trade);
-           _context.SaveChanges();
         }
 
         public Trade Get(Expression<Func<Trade, bool>> filter)
@@ -54,7 +52,6 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
                 tracked.State = EntityState.Detached;
             }
             _context.Trades.Update(trade);
-            _context.SaveChanges();
         }
     }
 }

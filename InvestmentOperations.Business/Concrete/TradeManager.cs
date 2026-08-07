@@ -23,7 +23,10 @@ namespace InvestmentOperations.Business.Concrete
         private readonly IBalanceService _balanceService;
         private readonly IPriceService _priceService;
         private readonly ILogService _logService;
-        public TradeManager(ITradeDal tradeDal, IUserService userService, IAssetService assetService, IBalanceService balanceService, IPriceService priceService, ILogService logService)
+        private readonly IBalanceDal _balanceDal;
+        private readonly IUnitOfWork _unitOfWork;
+       
+        public TradeManager(ITradeDal tradeDal, IUserService userService, IAssetService assetService, IBalanceService balanceService, IPriceService priceService, ILogService logService, IBalanceDal balanceDal, IUnitOfWork unitOfWork)
         {
             _tradeDal = tradeDal;
             _assetService = assetService;
@@ -31,6 +34,8 @@ namespace InvestmentOperations.Business.Concrete
             _balanceService = balanceService;
             _priceService = priceService;
             _logService = logService;
+            _balanceDal = balanceDal;
+            _unitOfWork = unitOfWork;
         }
 
         public IResult Add(Trade trade)
@@ -55,7 +60,7 @@ namespace InvestmentOperations.Business.Concrete
             }
 
             result = SetCurrentUnitPrice(trade);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return result;
             }
@@ -76,56 +81,53 @@ namespace InvestmentOperations.Business.Concrete
                     var asset = _assetService.GetById(trade.AssetId).Data;
                     _logService.Add(new Log
                     {
-                        UserId=trade.UserId,
-                        Action="TradeAddFailed",
-                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}",
+                        UserId = trade.UserId,
+                        Action = "TradeAddFailed",
+                        Details = $"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}",
                         Status = LogStatus.Failed
                     });
                     return result;
                 }
             }
 
-            if(trade.TradeType == TradeType.BUY)
+            if (trade.TradeType == TradeType.BUY)
             {
-                var tlAsset=GetTLAsset();
-                if(tlAsset!=null)
+                var tlAsset = GetTLAsset();
+                if (tlAsset != null)
                 {
-                  result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId,trade.TotalPrice );
-                  if(!result.Success)
-                 {
-                    _logService.Add(new Log
+                    result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
+                    if (!result.Success)
                     {
-                        UserId=trade.UserId,
-                        Action="TradeAddFailed",
-                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}",
-                        Status = LogStatus.Failed
+                        _logService.Add(new Log
+                        {
+                            UserId = trade.UserId,
+                            Action = "TradeAddFailed",
+                            Details = $"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}",
+                            Status = LogStatus.Failed
 
-                    });
-                    
+                        });
 
-                    return result;
-                 }
+
+                        return result;
+                    }
                 }
-                
+
             }
 
             _tradeDal.Add(trade);
 
-            UpdateBalancesAfterTrade(trade);          
-          
-           _logService.Add(new Log
-           {
-               UserId = trade.UserId,
-               Action="TradeAdded",
-               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
-               Status = LogStatus.Success
-           });
+            UpdateBalancesAfterTrade(trade);
+            _unitOfWork.SaveChanges();
 
+            _logService.Add(new Log
+            {
+                UserId = trade.UserId,
+                Action = "TradeAdded",
+                Details = $"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
+                Status = LogStatus.Success
+            });
             return new SuccessResult("Trade added successfully.");
         }
-
-
-
         public IResult Delete(int id)
         {
             var trade = _tradeDal.Get(t => t.TradeId == id);
@@ -133,21 +135,21 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult($"Trade with ID {id} does not exist.");
             }
+             _tradeDal.Delete(trade);
+             _unitOfWork.SaveChanges();
 
-            _tradeDal.Delete(trade);
-            
             _logService.Add(new Log
             {
-               UserId = trade.UserId,
-               Action="TradeDeleted",
-               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
-               Status = LogStatus.Success
+                UserId = trade.UserId,
+                Action = "TradeDeleted",
+                Details = $"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
+                Status = LogStatus.Success
             });
-            
+
             return new SuccessResult("Trade deleted successfully.");
         }
 
-        public IDataResult<List<TradeDto>>GetAll()
+        public IDataResult<List<TradeDto>> GetAll()
         {
             var trades = _tradeDal.GetAll();
             var dtos = trades.Select(MapToDto).ToList();
@@ -162,16 +164,13 @@ namespace InvestmentOperations.Business.Concrete
 
         public IDataResult<TradeDto> GetById(int id)
         {
-            var trade = _tradeDal.Get(t=> t.TradeId ==id);
-            if(trade ==null)
+            var trade = _tradeDal.Get(t => t.TradeId == id);
+            if (trade == null)
             {
                 return new ErrorDataResult<TradeDto>("Trade not found.");
             }
             return new SuccessDataResult<TradeDto>(MapToDto(trade), "Trade retrieved successfully.");
         }
-
-        
-
         public IResult Update(Trade trade)
         {
             var existingTrade = _tradeDal.Get(t => t.TradeId == trade.TradeId);
@@ -180,8 +179,7 @@ namespace InvestmentOperations.Business.Concrete
                 return new ErrorResult($"Trade with ID {trade.TradeId} does not exist.");
             }
 
-             trade.UnitPrice = existingTrade.UnitPrice;
-
+            trade.UnitPrice = existingTrade.UnitPrice;
 
             IResult result = CheckRelations(trade);
             if (!result.Success)
@@ -211,9 +209,9 @@ namespace InvestmentOperations.Business.Concrete
                     var asset = _assetService.GetById(trade.AssetId).Data;
                     _logService.Add(new Log
                     {
-                        UserId=trade.UserId,
-                        Action="TradeUpdateFailed",
-                        Details=$"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}",
+                        UserId = trade.UserId,
+                        Action = "TradeUpdateFailed",
+                        Details = $"Insufficient balance. Asset: {asset?.AssetName}, Quantity : {trade.Quantity}",
                         Status = LogStatus.Failed
 
                     });
@@ -222,40 +220,39 @@ namespace InvestmentOperations.Business.Concrete
                 }
             }
 
-            if (trade.TradeType== TradeType.BUY)
+            if (trade.TradeType == TradeType.BUY)
             {
-                var tlAsset=GetTLAsset();
-                if(tlAsset!=null)
+                var tlAsset = GetTLAsset();
+                if (tlAsset != null)
                 {
-                  result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
-                  if(!result.Success)
+                    result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
+                    if (!result.Success)
                     {
                         _logService.Add(new Log
-                    {
-                        UserId=trade.UserId,
-                        Action="TradeUpdateFailed",
-                        Details=$"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}",
-                        Status = LogStatus.Failed
+                        {
+                            UserId = trade.UserId,
+                            Action = "TradeUpdateFailed",
+                            Details = $"Insufficient balance. Asset: {tlAsset.AssetName}, Required: {trade.TotalPrice}",
+                            Status = LogStatus.Failed
 
-                    });
+                        });
                         return result;
                     }
-                   
                 }
-               
             }
 
-            _tradeDal.Update(trade);
+             _tradeDal.Update(trade);
+             UpdateBalancesAfterTrade(trade);
+             _unitOfWork.SaveChanges();
 
-            UpdateBalancesAfterTrade(trade);          
-          
-           _logService.Add(new Log
-           {
-               UserId = trade.UserId,
-               Action="TradeUpdated",
-               Details=$"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
-               Status = LogStatus.Success
-           });
+
+            _logService.Add(new Log
+            {
+                UserId = trade.UserId,
+                Action = "TradeUpdated",
+                Details = $"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
+                Status = LogStatus.Success
+            });
 
             return new SuccessResult("Trade updated successfully.");
         }
@@ -275,11 +272,8 @@ namespace InvestmentOperations.Business.Concrete
                 UnitPrice = trade.UnitPrice,
                 TotalPrice = trade.TotalPrice,
                 TradeDate = trade.TradeDate
-
             };
         }
-
-
 
 
         #region Validation Methods
@@ -352,7 +346,7 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult("No current price was found for this asset.");
             }
-            trade.UnitPrice= priceResult.Data.CurrentPrice;
+            trade.UnitPrice = priceResult.Data.CurrentPrice;
             return new SuccessResult();
         }
 
@@ -395,16 +389,14 @@ namespace InvestmentOperations.Business.Concrete
                     AssetId = assetId,
                     Amount = amountDelta
                 };
-                _balanceService.Add(newBalance);
+                _balanceDal.Add(newBalance);
             }
             else
             {
                 existingBalance.Amount += amountDelta;
-                _balanceService.Update(existingBalance);
+                _balanceDal.Update(existingBalance);
             }
         }
-
-
         private void UpdateBalancesAfterTrade(Trade trade)
         {
             var tlAsset = GetTLAsset();
@@ -425,7 +417,7 @@ namespace InvestmentOperations.Business.Concrete
             }
         }
 
-        
+
 
         #endregion
     }

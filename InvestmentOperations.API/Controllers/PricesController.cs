@@ -17,11 +17,11 @@ namespace InvestmentOperations.API.Controllers
         {
             _priceService = priceService;
         }
-       
+
         [HttpPost("get")]
         public IActionResult Get(PriceQueryDto dto)
         {
-            if(dto==null || dto.Id == null)
+            if (dto == null || dto.Id == null)
             {
                 var allResult = _priceService.GetAll();
                 if (!allResult.Success)
@@ -55,8 +55,8 @@ namespace InvestmentOperations.API.Controllers
             }
             return Ok(result);
         }
-        
-        
+
+
 
         [HttpPut]
         [Authorize(Roles = "Admin")]
@@ -68,7 +68,7 @@ namespace InvestmentOperations.API.Controllers
                 AssetId = dto.AssetId,
                 CurrentPrice = dto.CurrentPrice
             };
-        
+
             var result = _priceService.Update(price);
             if (!result.Success)
             {

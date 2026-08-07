@@ -18,7 +18,7 @@ namespace InvestmentOperations.Business.Concrete
         public IResult Add(Log log)
         {
             IResult result = ValidateLog(log);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return result;
             }
@@ -27,40 +27,40 @@ namespace InvestmentOperations.Business.Concrete
 
             _logDal.Add(log);
             return new SuccessResult("Log added successfully.");
-            
+
         }
 
         public IDataResult<List<Log>> GetAll()
         {
-            return new SuccessDataResult<List<Log>> (_logDal.GetAll(), "logs listed.");
+            return new SuccessDataResult<List<Log>>(_logDal.GetAll(), "logs listed.");
         }
 
         public IDataResult<List<Log>> GetByUserId(int userId)
         {
-            return new SuccessDataResult<List<Log>> ( _logDal.GetByUserId(userId), "Logs listed.");
+            return new SuccessDataResult<List<Log>>(_logDal.GetByUserId(userId), "Logs listed.");
         }
-    
-    
-    #region Validation Methods
 
-    private IResult ValidateLog(Log log)
+
+        #region Validation Methods
+
+        private IResult ValidateLog(Log log)
         {
-            if (log==null)
+            if (log == null)
             {
                 return new ErrorResult("Log cannot be empty.");
             }
 
-            if(log.UserId <= 0 )
+            if (log.UserId <= 0)
             {
                 return new ErrorResult("UserId must be greater than zero.");
             }
 
-            if(string.IsNullOrWhiteSpace(log.Action))
+            if (string.IsNullOrWhiteSpace(log.Action))
             {
                 return new ErrorResult("Action cannot be empty.");
             }
 
-             if(string.IsNullOrWhiteSpace(log.Details))
+            if (string.IsNullOrWhiteSpace(log.Details))
             {
                 return new ErrorResult("Details cannot be empty.");
             }
@@ -72,6 +72,6 @@ namespace InvestmentOperations.Business.Concrete
             log.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         }
 
-    #endregion
+        #endregion
     }
 }
