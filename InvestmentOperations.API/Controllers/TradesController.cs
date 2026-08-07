@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
 using InvestmentOperations.Core.Utilities.Results;
+using InvestmentOperations.API.Authorization;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace InvestmentOperations.API.Controllers
@@ -13,52 +16,51 @@ namespace InvestmentOperations.API.Controllers
     public class TradesController : ControllerBase
     {
         private readonly ITradeService _tradeService;
-        public TradesController(ITradeService tradeService)
+        private readonly IAuthorizationService _authorizationService;
+        public TradesController(ITradeService tradeService, IAuthorizationService authorizationService)
         {
             _tradeService = tradeService;
+            _authorizationService = authorizationService;
         }
 
         [HttpPost("get")]
-        public IActionResult Get(TradeQueryDto dto)
+        public async Task<IActionResult> Get(TradeQueryDto dto)
         {
             bool isAdmin = User.IsInRole("Admin");
             var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-           
-            if (dto==null || dto.Id ==null)
+
+            if (dto == null || dto.Id == null)
             {
                 IDataResult<List<TradeDto>> result = isAdmin ? _tradeService.GetAll() : _tradeService.GetByUserId(callerId);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
                 }
-                return Ok(result); 
+                return Ok(result);
             }
             else
             {
                 var result = _tradeService.GetById(dto.Id.Value);
                 if (!result.Success)
                 {
-                    return BadRequest(result.Message);    
+                    return BadRequest(result.Message);
                 }
-                if(!isAdmin && result.Data.UserId != callerId)
+                var authResult = await _authorizationService.AuthorizeAsync(User, result.Data.UserId, "SameUserOrAdmin");
+                if(!authResult.Succeeded)
                 {
                     return Forbid();
                 }
                 return Ok(result);
-               
             }
         }
-       
+
         [HttpPost]
         public IActionResult Add(TradeForAddDto dto)
         {
-            if (!User.IsInRole("Admin"))
+            int targetUserId = dto.UserId;
+            if(!User.IsInRole ("Admin"))
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if(callerId!= dto.UserId)
-                {
-                    return Forbid();
-                }
+               targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             }
             var trade = new Trade
             {
@@ -77,16 +79,17 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPut]
-        public IActionResult Update(TradeForUpdateDto dto)
+        public async Task<IActionResult> Update(TradeForUpdateDto dto)
         {
-            if (!User.IsInRole("Admin"))
+            var existing = _tradeService.GetById(dto.TradeId);
+            if(!existing.Success)
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                var existing = _tradeService.GetById(dto.TradeId);
-                if (!existing.Success || existing.Data.UserId != callerId)
-                {
-                    return Forbid();
-                }
+                return BadRequest(existing.Message);
+            }
+            var authResult = await _authorizationService.AuthorizeAsync(User,dto.UserId, "SameUserOrAdmin");
+            if(!authResult.Succeeded)
+            {
+                return Forbid();
             }
             var trade = new Trade
             {
@@ -106,16 +109,17 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            if (!User.IsInRole("Admin"))
+            var existing = _tradeService.GetById(id);
+            if(!existing.Success)
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                var existing = _tradeService.GetById(id);
-                if (!existing.Success || existing.Data.UserId != callerId)
-                {
-                    return Forbid();
-                }
+                return BadRequest(existing.Message);
+            }
+            var authResult = await _authorizationService.AuthorizeAsync(User,existing.Data.UserId, "SameUserOrAdmin");
+            if(!authResult.Succeeded)
+            {
+                return Forbid();
             }
 
             var result = _tradeService.Delete(id);
@@ -125,6 +129,5 @@ namespace InvestmentOperations.API.Controllers
             }
             return Ok(result);
         }
-         
     }
 }

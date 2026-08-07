@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using InvestmentOperations.API.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,11 +29,11 @@ builder.Services.AddSwaggerGen(options =>
         In = Microsoft.OpenApi.ParameterLocation.Header,
         Description = "Enter the token in this format: Bearer {token}"
     });
-    options.AddSecurityRequirement(document=> new Microsoft.OpenApi.OpenApiSecurityRequirement
+    options.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
     {
         {
             new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document),
-            new List<string>() 
+            new List<string>()
         }
     });
 });
@@ -49,6 +50,7 @@ builder.Services.AddScoped<IBalanceDal, EfBalanceDal>();
 builder.Services.AddScoped<ILogService, LogManager>();
 builder.Services.AddScoped<ILogDal, EfLogDal>();
 builder.Services.AddScoped<ITokenService, TokenManager>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, SameUserOrAdminHandler>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -63,9 +65,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     };
 });
 
-builder.Services.AddAuthorization(options=>
+builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+    options.AddPolicy("SameUserOrAdmin", policy => policy.Requirements.Add(new SameUserOrAdminRequirement()));
 });
 
 var app = builder.Build();

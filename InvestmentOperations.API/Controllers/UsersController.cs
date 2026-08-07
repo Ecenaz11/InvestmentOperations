@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -13,19 +14,20 @@ namespace InvestmentOperations.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
-        public UsersController(IUserService userService)
+        private readonly IAuthorizationService _authorizationService;
+        public UsersController(IUserService userService, IAuthorizationService authorizationService)
         {
             _userService = userService;
+            _authorizationService = authorizationService;
         }
 
         [HttpPost("get")]
-        public IActionResult Get(UserQueryDto dto)
+        public async Task<IActionResult> Get(UserQueryDto dto)
         {
-           bool isAdmin = User.IsInRole("Admin");
-           var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-           if (dto==null || dto.Id ==null)
+            bool isAdmin = User.IsInRole("Admin");
+            if (dto == null || dto.Id == null)
             {
-                if(!isAdmin)
+                if (!isAdmin)
                 {
                     return Forbid();
                 }
@@ -41,20 +43,21 @@ namespace InvestmentOperations.API.Controllers
             }
             else
             {
-                if(!isAdmin && dto.Id != callerId)
+               var authResult = await _authorizationService.AuthorizeAsync(User, dto.Id.Value, "SameUserOrAdmin");
+               if(!authResult.Succeeded)
                 {
                     return Forbid();
                 }
                 var singleResult = _userService.GetById(dto.Id.Value);
                 if (!singleResult.Success)
                 {
-                    return BadRequest(singleResult.Message);    
+                    return BadRequest(singleResult.Message);
                 }
                 return Ok(MapToDto(singleResult.Data));
             }
         }
 
-         private UserDto MapToDto(User user)
+        private UserDto MapToDto(User user)
         {
             return new UserDto
             {
@@ -68,15 +71,12 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPut]
-        public IActionResult Update(UserForUpdateDto dto)
+        public async Task<IActionResult> Update(UserForUpdateDto dto)
         {
-            if(!User.IsInRole("Admin"))
+            var authResult= await _authorizationService.AuthorizeAsync(User, dto.UserId,"SameUserOrAdmin");
+            if(!authResult.Succeeded)
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if(dto.UserId != callerId)
-                {
-                    return Forbid();
-                }
+                return Forbid();
             }
             var user = new User
             {
@@ -88,7 +88,7 @@ namespace InvestmentOperations.API.Controllers
                 IsActive = dto.IsActive
 
             };
-        
+
             var result = _userService.Update(user);
             if (!result.Success)
             {

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.Extensions.Configuration.UserSecrets;
+using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -13,13 +15,15 @@ namespace InvestmentOperations.API.Controllers
     public class BalancesController : ControllerBase
     {
         private readonly IBalanceService _balanceService;
-        public BalancesController(IBalanceService balanceService)
+        private readonly IAuthorizationService _authorizationService;
+        public BalancesController(IBalanceService balanceService, IAuthorizationService authorizationService)
         {
             _balanceService = balanceService;
+            _authorizationService = authorizationService;
         }
 
         [HttpPost("get")]
-        public IActionResult Get(BalanceQueryDto dto)
+        public async Task<IActionResult> Get(BalanceQueryDto dto)
         {
             var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             bool isAdmin = User.IsInRole("Admin");
@@ -31,7 +35,8 @@ namespace InvestmentOperations.API.Controllers
                 {
                     return BadRequest(result.Message);
                 }
-                if (!isAdmin && result.Data.UserId != callerId)
+                var authResult = await _authorizationService.AuthorizeAsync(User, result.Data.UserId, "SameUserOrAdmin");
+                if(!authResult.Succeeded)
                 {
                     return Forbid();
                 }
@@ -40,10 +45,12 @@ namespace InvestmentOperations.API.Controllers
 
             if (dto != null && dto.UserId != null)
             {
-                if (!isAdmin && dto.UserId != callerId)
+                var authResult = await _authorizationService.AuthorizeAsync(User, dto.UserId.Value, "SameUserOrAdmin");
+                if(!authResult.Succeeded)
                 {
                     return Forbid();
                 }
+
                 var userResult = _balanceService.GetByUserIdDetailed(dto.UserId.Value);
                 if (!userResult.Success)
                 {
@@ -63,14 +70,12 @@ namespace InvestmentOperations.API.Controllers
         [HttpPost]
         public IActionResult Add(BalanceForAddDto dto)
         {
-            if (!User.IsInRole("Admin"))
+            int targetUserId = dto.UserId;
+            if(!User.IsInRole("Admin"))
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if (dto.UserId != callerId)
-                {
-                    return Forbid();
-                }
+                targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             }
+
             var balance = new Balance
             {
                 UserId = dto.UserId,
@@ -90,13 +95,10 @@ namespace InvestmentOperations.API.Controllers
         [HttpPost("deposit")]
         public IActionResult Deposit(BalanceForDepositDto dto)
         {
-            if (!User.IsInRole("Admin"))
+            int targetUserId = dto.UserId;
+            if(!User.IsInRole("Admin"))
             {
-                var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-                if (dto.UserId != callerId)
-                {
-                    return Forbid();
-                }
+                targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             }
             var result = _balanceService.Deposit(dto.UserId, dto.Amount);
             if (!result.Success)
