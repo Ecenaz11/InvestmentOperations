@@ -51,6 +51,8 @@ builder.Services.AddScoped<ILogService, LogManager>();
 builder.Services.AddScoped<ILogDal, EfLogDal>();
 builder.Services.AddScoped<ITokenService, TokenManager>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, SameUserOrAdminHandler>();
+builder.Services.AddExceptionHandler<InvestmentOperations.API.Middleware.GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -72,6 +74,7 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+app.UseExceptionHandler();
 
 //configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

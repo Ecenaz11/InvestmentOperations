@@ -21,23 +21,23 @@ namespace InvestmentOperations.API.Controllers
         [HttpPost("get")]
         public IActionResult Get(AssetQueryDto dto)
         {
-            if( dto== null || dto.Id ==null)
+            if (dto == null || dto.Id == null)
             {
                 var allResult = _assetService.GetAll();
-                if(!allResult.Success)
+                if (!allResult.Success)
                 {
                     return BadRequest(allResult.Message);
                 }
                 return Ok(allResult);
             }
             var result = _assetService.GetById(dto.Id.Value);
-            if(!result.Success)
+            if (!result.Success)
             {
-                return BadRequest(result.Message);  
+                return BadRequest(result.Message);
             }
             return Ok(result);
         }
-        
+
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Add(AssetForAddDto dto)
@@ -48,14 +48,14 @@ namespace InvestmentOperations.API.Controllers
                 AssetType = dto.AssetType,
                 AssetCode = dto.AssetCode
             };
-        
+
             var result = _assetService.Add(asset);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
 
-            return Ok(result);  
+            return Ok(result);
 
         }
 
@@ -72,26 +72,26 @@ namespace InvestmentOperations.API.Controllers
             };
 
             var result = _assetService.Update(asset);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
             return Ok(result);
         }
-      
-        
+
+
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
             var result = _assetService.Delete(id);
-            if(!result.Success)
+            if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
             return Ok(result);
-                
-                
+
+
         }
     }
 }
