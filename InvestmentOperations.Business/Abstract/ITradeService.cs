@@ -11,8 +11,6 @@ namespace InvestmentOperations.Business.Abstract
     public interface ITradeService
     {
         IResult Add(Trade trade);
-        IResult Update(Trade trade);
-        IResult Delete(int id);
         IDataResult<List<TradeDto>> GetAll();
         IDataResult<TradeDto> GetById(int id);
         IDataResult<List<TradeDto>> GetByUserId(int userId);

@@ -27,7 +27,6 @@ namespace InvestmentOperations.Business.Concrete
 
             _logDal.Add(log);
             return new SuccessResult("Log added successfully.");
-
         }
 
         public IDataResult<List<Log>> GetAll()

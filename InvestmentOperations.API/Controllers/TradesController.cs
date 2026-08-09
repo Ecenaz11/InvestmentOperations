@@ -7,6 +7,7 @@ using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.API.Authorization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration.UserSecrets;
 
 
 namespace InvestmentOperations.API.Controllers
@@ -57,72 +58,17 @@ namespace InvestmentOperations.API.Controllers
         [HttpPost]
         public IActionResult Add(TradeForAddDto dto)
         {
-            int targetUserId = dto.UserId;
-            if(!User.IsInRole ("Admin"))
-            {
-               targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-            }
+            int targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+            
             var trade = new Trade
             {
                 AssetId = dto.AssetId,
-                UserId = dto.UserId,
+                UserId = targetUserId,
                 Quantity = dto.Quantity,
                 TradeType = dto.TradeType,
             };
 
             var result = _tradeService.Add(trade);
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
-            return Ok(result);
-        }
-
-        [HttpPut]
-        public async Task<IActionResult> Update(TradeForUpdateDto dto)
-        {
-            var existing = _tradeService.GetById(dto.TradeId);
-            if(!existing.Success)
-            {
-                return BadRequest(existing.Message);
-            }
-            var authResult = await _authorizationService.AuthorizeAsync(User,dto.UserId, "SameUserOrAdmin");
-            if(!authResult.Succeeded)
-            {
-                return Forbid();
-            }
-            var trade = new Trade
-            {
-                TradeId = dto.TradeId,
-                AssetId = dto.AssetId,
-                UserId = dto.UserId,
-                Quantity = dto.Quantity,
-                TradeType = dto.TradeType,
-            };
-
-            var result = _tradeService.Update(trade);
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
-            return Ok(result);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var existing = _tradeService.GetById(id);
-            if(!existing.Success)
-            {
-                return BadRequest(existing.Message);
-            }
-            var authResult = await _authorizationService.AuthorizeAsync(User,existing.Data.UserId, "SameUserOrAdmin");
-            if(!authResult.Succeeded)
-            {
-                return Forbid();
-            }
-
-            var result = _tradeService.Delete(id);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
