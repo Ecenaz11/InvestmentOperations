@@ -5,7 +5,7 @@ using System.Text;
 
 namespace InvestmentOperations.DataAccess.Abstract
 {
-    public interface IBalanceDal : IEntityRepository<Balance>
+    public interface IAssetHoldingDal : IEntityRepository<AssetHolding>
     {
 
     }

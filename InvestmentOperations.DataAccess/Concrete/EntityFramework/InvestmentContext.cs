@@ -16,7 +16,7 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
         public DbSet<Asset> Assets { get; set; }
         public DbSet<Price> Prices { get; set; }
         public DbSet<Trade> Trades { get; set; }
-        public DbSet<Balance> Balances { get; set; }
+        public DbSet<AssetHolding> AssetHoldings { get; set; }
         public DbSet<Log> Logs {get;set;}
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -74,10 +74,10 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
                 entity.HasOne<Asset>().WithMany().HasForeignKey(p=>p.AssetId).HasConstraintName("fk_prices_assets").OnDelete(DeleteBehavior.NoAction);
             });
 
-            modelBuilder.Entity<Balance>(entity =>
+            modelBuilder.Entity<AssetHolding>(entity =>
             {
-                entity.ToTable("balances");
-                entity.Property(b => b.BalanceId).HasColumnName("balanceid");
+                entity.ToTable("assetholdings");
+                entity.Property(b => b.AssetHoldingId).HasColumnName("assetholdingid");
                 entity.Property(b => b.UserId).HasColumnName("userid");
                 entity.Property(b => b.AssetId).HasColumnName("assetid");
                 entity.Property(b => b.Amount).HasColumnName("amount");

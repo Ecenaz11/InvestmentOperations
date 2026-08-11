@@ -2,9 +2,9 @@ using InvestmentOperations.Core.Entities;
 
 namespace InvestmentOperations.Entities.Dtos
 {
-    public class BalanceDto : IDto
+    public class AssetHoldingDto : IDto
     {
-        public int BalanceId { get; set; }
+        public int AssetHoldingId { get; set; }
         public int UserId { get; set; }
         public int AssetId { get; set; }
         public string AssetName { get; set; }

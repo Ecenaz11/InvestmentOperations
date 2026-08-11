@@ -5,9 +5,9 @@ using System.Text;
 
 namespace InvestmentOperations.Entities.Concrete
 {
-    public class Balance : IEntity
+    public class AssetHolding : IEntity
     {
-        public int BalanceId { get; set; }
+        public int AssetHoldingId { get; set; }
         public int UserId { get; set; }
         public int AssetId { get; set; }
         public decimal Amount { get; set; }

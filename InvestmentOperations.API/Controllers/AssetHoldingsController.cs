@@ -12,25 +12,25 @@ namespace InvestmentOperations.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BalancesController : ControllerBase
+    public class AssetHoldingsController : ControllerBase
     {
-        private readonly IBalanceService _balanceService;
+        private readonly IAssetHoldingService _assetHoldingService;
         private readonly IAuthorizationService _authorizationService;
-        public BalancesController(IBalanceService balanceService, IAuthorizationService authorizationService)
+        public AssetHoldingsController(IAssetHoldingService assetHoldingService, IAuthorizationService authorizationService)
         {
-            _balanceService = balanceService;
+            _assetHoldingService = assetHoldingService;
             _authorizationService = authorizationService;
         }
 
         [HttpPost("get")]
-        public async Task<IActionResult> Get(BalanceQueryDto dto)
+        public async Task<IActionResult> Get(AssetHoldingQueryDto dto)
         {
             var callerId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             bool isAdmin = User.IsInRole("Admin");
 
             if (dto != null && dto.Id != null)
             {
-                var result = _balanceService.GetByIdDetailed(dto.Id.Value);
+                var result = _assetHoldingService.GetByIdDetailed(dto.Id.Value);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -51,7 +51,7 @@ namespace InvestmentOperations.API.Controllers
                     return Forbid();
                 }
 
-                var userResult = _balanceService.GetByUserIdDetailed(dto.UserId.Value);
+                var userResult = _assetHoldingService.GetByUserIdDetailed(dto.UserId.Value);
                 if (!userResult.Success)
                 {
                     return BadRequest(userResult.Message);
@@ -59,7 +59,7 @@ namespace InvestmentOperations.API.Controllers
                 return Ok(userResult);
             }
 
-            var allResult = isAdmin ? _balanceService.GetAllDetailed() : _balanceService.GetByUserIdDetailed(callerId);
+            var allResult = isAdmin ? _assetHoldingService.GetAllDetailed() : _assetHoldingService.GetByUserIdDetailed(callerId);
             if (!allResult.Success)
             {
                 return BadRequest(allResult.Message);
@@ -68,7 +68,7 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(BalanceForAddDto dto)
+        public IActionResult Add(AssetHoldingForAddDto dto)
         {
             int targetUserId = dto.UserId;
             if(!User.IsInRole("Admin"))
@@ -76,14 +76,14 @@ namespace InvestmentOperations.API.Controllers
                 targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             }
 
-            var balance = new Balance
+            var assetHolding = new AssetHolding
             {
                 UserId = dto.UserId,
                 AssetId = dto.AssetId,
                 Amount = dto.Amount
             };
 
-            var result = _balanceService.Add(balance);
+            var result = _assetHoldingService.Add(assetHolding);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -93,14 +93,14 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost("deposit")]
-        public IActionResult Deposit(BalanceForDepositDto dto)
+        public IActionResult Deposit(DepositDto dto)
         {
             int targetUserId = dto.UserId;
             if(!User.IsInRole("Admin"))
             {
                 targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             }
-            var result = _balanceService.Deposit(dto.UserId, dto.Amount);
+            var result = _assetHoldingService.Deposit(dto.UserId, dto.Amount);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

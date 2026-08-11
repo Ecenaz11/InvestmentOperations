@@ -1,7 +1,7 @@
 using InvestmentOperations.Entities.Dtos;
 namespace InvestmentOperations.Entities.Dtos
 {
-    public class BalanceForAddDto
+    public class AssetHoldingForAddDto
     {
         public int UserId { get; set; }
         public int AssetId { get; set; }

@@ -20,21 +20,21 @@ namespace InvestmentOperations.Business.Concrete
         private readonly ITradeDal _tradeDal;
         private readonly IUserService _userService;
         private readonly IAssetService _assetService;
-        private readonly IBalanceService _balanceService;
+        private readonly IAssetHoldingService _assetHoldingService;
         private readonly IPriceService _priceService;
         private readonly ILogService _logService;
-        private readonly IBalanceDal _balanceDal;
+        private readonly IAssetHoldingDal _assetHoldingDal;
         private readonly IUnitOfWork _unitOfWork;
-       
-        public TradeManager(ITradeDal tradeDal, IUserService userService, IAssetService assetService, IBalanceService balanceService, IPriceService priceService, ILogService logService, IBalanceDal balanceDal, IUnitOfWork unitOfWork)
+
+        public TradeManager(ITradeDal tradeDal, IUserService userService, IAssetService assetService, IAssetHoldingService assetHoldingService, IPriceService priceService, ILogService logService, IAssetHoldingDal assetHoldingDal, IUnitOfWork unitOfWork)
         {
             _tradeDal = tradeDal;
             _assetService = assetService;
             _userService = userService;
-            _balanceService = balanceService;
+            _assetHoldingService = assetHoldingService;
             _priceService = priceService;
             _logService = logService;
-            _balanceDal = balanceDal;
+            _assetHoldingDal = assetHoldingDal;
             _unitOfWork = unitOfWork;
         }
 
@@ -74,7 +74,7 @@ namespace InvestmentOperations.Business.Concrete
 
             if (trade.TradeType == TradeType.SELL)
             {
-                result = CheckSufficientBalance(trade.UserId, trade.AssetId, trade.Quantity);
+                result = CheckSufficientAssetHolding(trade.UserId, trade.AssetId, trade.Quantity);
                 if (!result.Success)
                 {
                     var asset = _assetService.GetById(trade.AssetId).Data;
@@ -94,7 +94,7 @@ namespace InvestmentOperations.Business.Concrete
                 var tlAsset = GetTLAsset();
                 if (tlAsset != null)
                 {
-                    result = CheckSufficientBalance(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
+                    result = CheckSufficientAssetHolding(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
                     if (!result.Success)
                     {
                         _logService.Add(new Log
@@ -114,7 +114,7 @@ namespace InvestmentOperations.Business.Concrete
             try
             {
                 _tradeDal.Add(trade);
-                UpdateBalancesAfterTrade(trade);
+                UpdateAssetHoldingsAfterTrade(trade);
                 _unitOfWork.SaveChanges();
                
                 _logService.Add(new Log
@@ -263,10 +263,10 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult();
         }
 
-        private IResult CheckSufficientBalance(int userId, int assetId, decimal requiredAmount)
+        private IResult CheckSufficientAssetHolding(int userId, int assetId, decimal requiredAmount)
         {
-            var balance = _balanceService.GetByUserId(userId).Data?.FirstOrDefault(b => b.AssetId == assetId);
-            decimal currentAmount = balance?.Amount ?? 0;
+            var assetHolding = _assetHoldingService.GetByUserId(userId).Data?.FirstOrDefault(a => a.AssetId == assetId);
+            decimal currentAmount = assetHolding?.Amount ?? 0;
 
             if (currentAmount < requiredAmount)
             {
@@ -277,27 +277,27 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
-        private void ApplyBalanceChange(int userId, int assetId, decimal amountDelta)
+        private void ApplyAssetHoldingChange(int userId, int assetId, decimal amountDelta)
         {
-            var existingBalance = _balanceService.GetByUserId(userId).Data?.FirstOrDefault(b => b.AssetId == assetId);
+            var existingAssetHolding = _assetHoldingService.GetByUserId(userId).Data?.FirstOrDefault(a => a.AssetId == assetId);
 
-            if (existingBalance == null)
+            if (existingAssetHolding == null)
             {
-                var newBalance = new Balance
+                var newAssetHolding = new AssetHolding
                 {
                     UserId = userId,
                     AssetId = assetId,
                     Amount = amountDelta
                 };
-                _balanceDal.Add(newBalance);
+                _assetHoldingDal.Add(newAssetHolding);
             }
             else
             {
-                existingBalance.Amount += amountDelta;
-                _balanceDal.Update(existingBalance);
+                existingAssetHolding.Amount += amountDelta;
+                _assetHoldingDal.Update(existingAssetHolding);
             }
         }
-        private void UpdateBalancesAfterTrade(Trade trade)
+        private void UpdateAssetHoldingsAfterTrade(Trade trade)
         {
             var tlAsset = GetTLAsset();
             if (tlAsset == null)
@@ -307,13 +307,13 @@ namespace InvestmentOperations.Business.Concrete
 
             if (trade.TradeType == TradeType.BUY)
             {
-                ApplyBalanceChange(trade.UserId, tlAsset.AssetId, -trade.TotalPrice);
-                ApplyBalanceChange(trade.UserId, trade.AssetId, trade.Quantity);
+                ApplyAssetHoldingChange(trade.UserId, tlAsset.AssetId, -trade.TotalPrice);
+                ApplyAssetHoldingChange(trade.UserId, trade.AssetId, trade.Quantity);
             }
             else if (trade.TradeType == TradeType.SELL)
             {
-                ApplyBalanceChange(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
-                ApplyBalanceChange(trade.UserId, trade.AssetId, -trade.Quantity);
+                ApplyAssetHoldingChange(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
+                ApplyAssetHoldingChange(trade.UserId, trade.AssetId, -trade.Quantity);
             }
         }
 
