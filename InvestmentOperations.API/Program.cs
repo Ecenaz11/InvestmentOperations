@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using InvestmentOperations.API.Authorization;
+using InvestmentOperations.API.BackgroundServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<InvestmentContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("InvestmentDb")));
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddHttpClient<IGoldApiClient, GoldApiClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ExternalPriceApis:GoldApi:BaseUrl"]);
+    client.DefaultRequestHeaders.Add("x-access-token", builder.Configuration["ExternalPriceApis:GoldApi:ApiKey"]);
+});
+
+builder.Services.AddHttpClient<IFrankfurterClient, FrankfurterClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ExternalPriceApis:Frankfurter:BaseUrl"]);
+});
+
+builder.Services.AddStackExchangeRedisCache(options=>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("Redis");
+});
+
+builder.Services.AddHybridCache();
 
 builder.Services.AddControllers();
 
@@ -54,6 +75,8 @@ builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHand
 builder.Services.AddExceptionHandler<InvestmentOperations.API.Middleware.GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IMarketPriceSyncService, MarketPriceSyncService>();
+builder.Services.AddHostedService<MarketPriceSyncBackgroundService>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters

@@ -28,7 +28,6 @@ namespace InvestmentOperations.Business.Concrete
             _logDal.Add(log);
             return new SuccessResult("Log added successfully.");
         }
-
         public IDataResult<List<Log>> GetAll()
         {
             return new SuccessDataResult<List<Log>>(_logDal.GetAll(), "logs listed.");
@@ -38,7 +37,6 @@ namespace InvestmentOperations.Business.Concrete
         {
             return new SuccessDataResult<List<Log>>(_logDal.GetByUserId(userId), "Logs listed.");
         }
-
 
         #region Validation Methods
 
@@ -65,7 +63,6 @@ namespace InvestmentOperations.Business.Concrete
             }
             return new SuccessResult();
         }
-
         private void PrepareLog(Log log)
         {
             log.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);

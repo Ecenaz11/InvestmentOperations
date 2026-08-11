@@ -46,7 +46,6 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-
             result = CheckRelations(trade);
             if (!result.Success)
             {
@@ -107,25 +106,33 @@ namespace InvestmentOperations.Business.Concrete
 
                         });
 
-
                         return result;
                     }
                 }
-
             }
-
-            _tradeDal.Add(trade);
-
-            UpdateBalancesAfterTrade(trade);
-            _unitOfWork.SaveChanges();
-
-            _logService.Add(new Log
+            _unitOfWork.BeginTransaction();
+            try
+            {
+                _tradeDal.Add(trade);
+                UpdateBalancesAfterTrade(trade);
+                _unitOfWork.SaveChanges();
+               
+                _logService.Add(new Log
             {
                 UserId = trade.UserId,
                 Action = "TradeAdded",
                 Details = $"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
                 Status = LogStatus.Success
             });
+           
+            _unitOfWork.Commit();
+            }
+            catch
+            {
+                _unitOfWork.Rollback();
+                throw;
+            }
+
             return new SuccessResult("Trade added successfully.");
         }
         

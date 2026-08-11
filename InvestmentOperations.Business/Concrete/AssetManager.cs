@@ -8,17 +8,27 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Primitives;
+using System.Security.Claims;
+using IHttpContextAccessor = Microsoft.AspNetCore.Http.IHttpContextAccessor;
+using InvestmentOperations.Entities.Enums;
 
 namespace InvestmentOperations.Business.Concrete
 {
     public class AssetManager : IAssetService
     {
         private readonly IAssetDal _assetDal;
-        public AssetManager(IAssetDal assetDal)
+        private readonly HybridCache _cache;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogService _logService;
+        public AssetManager(IAssetDal assetDal, HybridCache cache, IHttpContextAccessor httpContectAccessor, ILogService logService)
         {
             _assetDal = assetDal;
+            _cache = cache;
+            _httpContextAccessor = httpContectAccessor;
+            _logService = logService;
         }
-
         public IResult Add(Asset asset)
         {
             IResult result = ValidateAsset(asset);
@@ -49,6 +59,11 @@ namespace InvestmentOperations.Business.Concrete
 
 
             _assetDal.Add(asset);
+           
+            _cache.RemoveAsync("assets:all").AsTask().GetAwaiter().GetResult();
+
+            LogAction("AssetAdded", $"AssetCode: {asset.AssetCode}, AssetName: {asset.AssetName}");
+           
             return new SuccessResult("Asset added successfully.");
         }
 
@@ -60,36 +75,45 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult("Asset not found.");
             }
-
             _assetDal.Delete(asset);
 
+            _cache.RemoveAsync($"assets:{id}").AsTask().GetAwaiter().GetResult();
+            _cache.RemoveAsync("assets:all").AsTask().GetAwaiter().GetResult();
 
+            LogAction("AssetDeleted", $"AssetId: {id}");
+            
             return new SuccessResult("Asset deleted successfully.");
 
         }
-
         public IDataResult<Asset> GetById(int id)
         {
-            var asset = _assetDal.Get(a => a.AssetId == id);
+            Asset asset = _cache.GetOrCreateAsync($"asset:{id}",
+                async cancellationToken => _assetDal.Get(a => a.AssetId == id),
+                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) }
+            ).AsTask().GetAwaiter().GetResult();
+
             if (asset == null)
             {
                 return new ErrorDataResult<Asset>("Asset not found.");
             }
+            LogAction("AssetViewed", $"AssetId: {id}");
             return new SuccessDataResult<Asset>(asset, "Asset found.");
         }
-
-
         public IDataResult<List<Asset>> GetAll()
         {
-            return new SuccessDataResult<List<Asset>>
-                (
-                _assetDal.GetAll(), "Assets listed."
-                );
+            List<Asset> assets = _cache.GetOrCreateAsync(
+                "assets:all",
+                async cancellationToken => _assetDal.GetAll(),
+                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) })
+                .AsTask().GetAwaiter().GetResult();
+
+            LogAction("AssetsListed", $"Count: {assets.Count}");
+
+            return new SuccessDataResult<List<Asset>>(assets, "Assets listed.");
         }
 
         public IResult Update(Asset asset)
         {
-
             var existingAsset = _assetDal.Get(a => a.AssetId == asset.AssetId);
             if (existingAsset == null)
             {
@@ -115,17 +139,33 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
 
 
-
             result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
             if (!result.Success)
                 return result;
 
             _assetDal.Update(asset);
+           
+            _cache.RemoveAsync($"asset:{asset.AssetId}").AsTask().GetAwaiter().GetResult();
+            _cache.RemoveAsync("assets:all").AsTask().GetAwaiter().GetResult();
+
+            LogAction("AssetUpdated", $"AssetId: {asset.AssetId}, AssetCode: {asset.AssetCode}, AssetName: {asset.AssetName}");
+            
             return new SuccessResult("Asset updated successfully.");
         }
 
+         private void LogAction (string action, string details)
+        {
+            var userIdClaim= _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int userId = userIdClaim != null ? int.Parse(userIdClaim) : 0;
 
-
+            _logService.Add(new Log
+            {
+             UserId = userId,
+            Action = action,
+            Details = details,
+            Status = LogStatus.Success
+            });
+        }
 
         #region Validation Methods
 
@@ -155,8 +195,6 @@ namespace InvestmentOperations.Business.Concrete
             asset.AssetCode = asset.AssetCode.Trim().ToUpperInvariant();
             asset.AssetType = asset.AssetType.Trim().ToUpperInvariant();
         }
-
-
         private IResult CheckDuplicateAssetCode(string assetCode, int excludeAssetId = 0)
         {
             if (string.IsNullOrWhiteSpace(assetCode))
@@ -164,8 +202,6 @@ namespace InvestmentOperations.Business.Concrete
                 return new ErrorResult("Asset Code cannot be empty");
 
             }
-
-
             var allAssets = _assetDal.GetAll();
             if (allAssets != null && allAssets.Count > 0)
             {
@@ -177,12 +213,9 @@ namespace InvestmentOperations.Business.Concrete
                 {
                     return new ErrorResult("This AssetCode already exists.");
                 }
-
             }
-
             return new SuccessResult();
         }
-
         private IResult CheckDuplicateAssetName(string assetName, int excludeAssetId = 0)
         {
             if (string.IsNullOrWhiteSpace(assetName))
@@ -201,13 +234,9 @@ namespace InvestmentOperations.Business.Concrete
                 {
                     return new ErrorResult("This Asset Name already exists.");
                 }
-
             }
-
             return new SuccessResult();
         }
-
-
         private IResult ValidateAssetType(Asset asset)
         {
             if (string.IsNullOrWhiteSpace(asset.AssetType))

@@ -9,6 +9,11 @@ using System.Security.AccessControl;
 using System.Text;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.VisualBasic;
+using System.Net.Http.Headers;
+using System.Security;
+using System.Security.Claims;
+using IHttpContextAccessor = Microsoft.AspNetCore.Http.IHttpContextAccessor;
+using InvestmentOperations.Entities.Enums;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -16,13 +21,16 @@ namespace InvestmentOperations.Business.Concrete
     {
         private readonly IPriceDal _priceDal;
         private readonly IAssetDal _assetDal;
-        public PriceManager(IPriceDal priceDal, IAssetDal assetDal)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogService _logService;
+        public PriceManager(IPriceDal priceDal, IAssetDal assetDal, IHttpContextAccessor httpContextAccessor, ILogService logService)
         {
             _priceDal = priceDal;
             _assetDal = assetDal;
+            _httpContextAccessor = httpContextAccessor;
+            _logService = logService;
 
         }
-
         public IResult Add(Price price)
         {
             PreparePrice(price);
@@ -50,9 +58,10 @@ namespace InvestmentOperations.Business.Concrete
             }
             _priceDal.Add(price);
 
+            LogAction("PriceAdded", $"AssetId: {price.AssetId}, CurrentPrice: {price.CurrentPrice}");
+
             return new SuccessResult("Price added successfully.");
         }
-
         public IResult Delete(int id)
         {
             var price = _priceDal.Get(p => p.PriceId == id);
@@ -60,12 +69,12 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorResult("Price not found.");
             }
-
             _priceDal.Delete(price);
+
+            LogAction("PriceDeleted", $"PriceId: {id}");
 
             return new SuccessResult("Price deleted successfully.");
         }
-
         public IDataResult<PriceDto> GetById(int id)
         {
             var price = _priceDal.Get(p => p.PriceId == id);
@@ -73,16 +82,19 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorDataResult<PriceDto>("Price not found");
             }
+            LogAction("PriceViewed", $"PriceId: {id}");
+            
             return new SuccessDataResult<PriceDto>(MapToDto(price), "Price found.");
         }
-
         public IDataResult<List<PriceDto>> GetAll()
         {
             var prices = _priceDal.GetAll();
             var dtos = prices.Select(MapToDto).ToList();
+
+            LogAction("PricesListed", $"Count: {dtos.Count}");
+
             return new SuccessDataResult<List<PriceDto>>(dtos, "Prices listed.");
         }
-
         public IDataResult<Price> GetByAssetId(int assetId)
         {
             var price = _priceDal.Get(p => p.AssetId == assetId);
@@ -90,9 +102,10 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorDataResult<Price>("Price not found for this asset.");
             }
+            LogAction("PriceViewedByAsset", $"AssetId: {assetId}");
+
             return new SuccessDataResult<Price>(price, "Price found.");
         }
-
         public IResult Update(Price price)
         {
             var existingPrice = _priceDal.Get(p => p.PriceId == price.PriceId);
@@ -121,6 +134,9 @@ namespace InvestmentOperations.Business.Concrete
             PreparePrice(price);
 
             _priceDal.Update(price);
+
+            LogAction("PriceUpdated", $"PriceId: {price.PriceId}, AssetId: {price.AssetId}, CurrentPrice: {price.CurrentPrice}");
+
             return new SuccessResult("Price updated successfully.");
         }
 
@@ -137,6 +153,21 @@ namespace InvestmentOperations.Business.Concrete
                 UpdatedAt = price.UpdatedAt
             };
         }
+
+        private void LogAction(string action, string details)
+        {
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int userId = userIdClaim != null ? int.Parse(userIdClaim) : 0;
+
+            _logService.Add(new Log
+            {
+                UserId = userId,
+                Action = action,
+                Details = details,
+                Status = LogStatus.Success
+            });
+        }
+
         #region Validation Methods
         private IResult ValidatePrice(Price price)
         {

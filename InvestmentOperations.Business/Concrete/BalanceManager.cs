@@ -9,6 +9,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Security.Claims;
+using IHttpContextAccessor = Microsoft.AspNetCore.Http.IHttpContextAccessor;
+using InvestmentOperations.Entities.Enums;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -18,12 +21,16 @@ namespace InvestmentOperations.Business.Concrete
         private readonly IAssetService _assetService;
         private readonly IUserService _userService;
         private readonly IUnitOfWork _unitOfWork;
-        public BalanceManager(IBalanceDal balanceDal, IAssetService assetService, IUserService userService, IUnitOfWork unitOfWork)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogService _logService;
+        public BalanceManager(IBalanceDal balanceDal, IAssetService assetService, IUserService userService, IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor, ILogService logService)
         {
             _balanceDal = balanceDal;
             _assetService = assetService;
             _userService = userService;
             _unitOfWork = unitOfWork;
+            _httpContextAccessor = httpContextAccessor;
+            _logService = logService;
         }
 
         public IResult Add(Balance balance)
@@ -53,14 +60,15 @@ namespace InvestmentOperations.Business.Concrete
                 PrepareBalance(existingBalance);
                 _balanceDal.Update(existingBalance);
                 _unitOfWork.SaveChanges();
+                LogAction("BalanceIncreased", $"UserId: {existingBalance.UserId}, AssetId: {existingBalance.AssetId}, NewAmount: {existingBalance.Amount}");
                 return new SuccessResult("Balance updated successfully.");
-
             }
 
             PrepareBalance(balance);
 
             _balanceDal.Add(balance);
             _unitOfWork.SaveChanges();
+            LogAction("BalanceAdded", $"UserId: {balance.UserId}, AssetId: {balance.AssetId}, Amount: {balance.Amount}");
             return new SuccessResult("Balance added successfully.");
         }
 
@@ -92,21 +100,23 @@ namespace InvestmentOperations.Business.Concrete
 
             _balanceDal.Delete(balance);
             _unitOfWork.SaveChanges();
+            LogAction("BalanceDeleted", $"BalanceId: {id}");
             return new SuccessResult("Balance deleted successfully.");
         }
 
         public IDataResult<List<Balance>> GetByUserId(int userId)
         {
-            return new SuccessDataResult<List<Balance>>
-                (
-                _balanceDal.GetAll(b => b.UserId == userId), "Balances listed."
-                );
+            var balances = _balanceDal.GetAll(b => b.UserId == userId);
+            LogAction("BalancesListedByUser", $"UserId: {userId}");
+            return new SuccessDataResult<List<Balance>>(balances, "Balances listed.");
         }
 
         public IDataResult<List<BalanceDto>> GetAllDetailed()
         {
             var balance = _balanceDal.GetAll();
             var dtos = balance.Select(MapToDto).ToList();
+
+            LogAction("BalancesListed", $"Count: {dtos.Count}");
 
             return new SuccessDataResult<List<BalanceDto>>(dtos, "Balances listed.");
         }
@@ -118,6 +128,7 @@ namespace InvestmentOperations.Business.Concrete
             {
                 return new ErrorDataResult<BalanceDto>("Balance not found.");
             }
+            LogAction("BalanceViewed", $"BalanceId: {id}");
 
             return new SuccessDataResult<BalanceDto>(MapToDto(balance), "Balance found.");
         }
@@ -147,6 +158,7 @@ namespace InvestmentOperations.Business.Concrete
 
             _balanceDal.Update(balance);
             _unitOfWork.SaveChanges();
+            LogAction("BalanceUpdated", $"BalanceId: {balance.BalanceId}, AssetId: {balance.AssetId}, Amount: {balance.Amount}");
             return new SuccessResult("Balance updated successfully.");
         }
         private BalanceDto MapToDto(Balance balance)
@@ -163,7 +175,19 @@ namespace InvestmentOperations.Business.Concrete
                 Amount = balance.Amount
             };
         }
+        private void LogAction(string action, string details)
+        {
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            int userId = userIdClaim != null ? int.Parse(userIdClaim) : 0;
 
+            _logService.Add(new Log
+            {
+                UserId = userId,
+                Action = action,
+                Details = details,
+                Status = LogStatus.Success
+            });
+        }
 
         #region Validation Methods
         private IResult ValidateBalance(Balance balance)
