@@ -2,6 +2,7 @@ using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.Business.Concrete;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.DataAccess.Concrete.EntityFramework;
+using InvestmentOperations.DataAccess.Concrete.Caching;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,7 @@ using System.Text;
 using InvestmentOperations.API.Authorization;
 using InvestmentOperations.API.BackgroundServices;
 using InvestmentOperations.Core.DataAccess;
+using InvestmentOperations.Core.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,12 +32,8 @@ builder.Services.AddHttpClient<IFrankfurterClient, FrankfurterClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["ExternalPriceApis:Frankfurter:BaseUrl"]);
 });
 
-builder.Services.AddStackExchangeRedisCache(options=>
-{
-    options.Configuration = builder.Configuration.GetConnectionString("Redis");
-});
-
-builder.Services.AddHybridCache();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
 
 builder.Services.AddControllers();
 

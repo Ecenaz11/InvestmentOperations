@@ -8,23 +8,23 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Primitives;
 using System.Security.Claims;
 using IHttpContextAccessor = Microsoft.AspNetCore.Http.IHttpContextAccessor;
 using InvestmentOperations.Entities.Enums;
 using InvestmentOperations.Core.DataAccess;
+using InvestmentOperations.Core.Caching;
 
 namespace InvestmentOperations.Business.Concrete
 {
     public class AssetManager : IAssetService
     {
         private readonly IAssetDal _assetDal;
-        private readonly HybridCache _cache;
+        private readonly ICacheService _cache;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogService _logService;
         private readonly IUnitOfWork _unitOfWork;
-        public AssetManager(IAssetDal assetDal, HybridCache cache, IHttpContextAccessor httpContectAccessor, ILogService logService,IUnitOfWork unitOfWork)
+        public AssetManager(IAssetDal assetDal, ICacheService cache, IHttpContextAccessor httpContectAccessor, ILogService logService,IUnitOfWork unitOfWork)
         {
             _assetDal = assetDal;
             _cache = cache;
@@ -95,7 +95,7 @@ namespace InvestmentOperations.Business.Concrete
         {
             Asset asset = await _cache.GetOrCreateAsync($"asset:{id}",
                 async cancellationToken => await _assetDal.GetAsync(a => a.AssetId == id),
-                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) });
+                TimeSpan.FromHours(1));
 
             if (asset == null)
             {
@@ -109,7 +109,7 @@ namespace InvestmentOperations.Business.Concrete
             List<Asset> assets = await _cache.GetOrCreateAsync(
                 "assets:all",
                 async cancellationToken => await _assetDal.GetAllAsync(),
-                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) });
+                TimeSpan.FromHours(1));
 
             LogAction("AssetsListed", $"Count: {assets.Count}");
 
