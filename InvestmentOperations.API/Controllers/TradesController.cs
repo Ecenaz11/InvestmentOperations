@@ -32,7 +32,7 @@ namespace InvestmentOperations.API.Controllers
 
             if (dto == null || dto.Id == null)
             {
-                IDataResult<List<TradeDto>> result = isAdmin ? _tradeService.GetAll() : _tradeService.GetByUserId(callerId);
+                IDataResult<List<TradeDto>> result = isAdmin ? await _tradeService.GetAll() : await _tradeService.GetByUserId(callerId);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -41,7 +41,7 @@ namespace InvestmentOperations.API.Controllers
             }
             else
             {
-                var result = _tradeService.GetById(dto.Id.Value);
+                var result = await _tradeService.GetById(dto.Id.Value);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -56,10 +56,10 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(TradeForAddDto dto)
+        public async Task<IActionResult> Add(TradeForAddDto dto)
         {
             int targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
-            
+
             var trade = new Trade
             {
                 AssetId = dto.AssetId,
@@ -68,7 +68,7 @@ namespace InvestmentOperations.API.Controllers
                 TradeType = dto.TradeType,
             };
 
-            var result = _tradeService.Add(trade);
+            var result = await _tradeService.Add(trade);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

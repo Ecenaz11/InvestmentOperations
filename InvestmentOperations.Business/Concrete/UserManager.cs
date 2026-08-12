@@ -1,16 +1,15 @@
-﻿using InvestmentOperations.Core.Utilities.Results;
+using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using InvestmentOperations.Entities.Enums;
 using InvestmentOperations.Entities.Dtos;
+using InvestmentOperations.Core.DataAccess;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -18,13 +17,16 @@ namespace InvestmentOperations.Business.Concrete
     {
         private readonly IUserDal _userDal;
         private readonly ILogService _logService;
-        public UserManager(IUserDal userDal, ILogService logService)
+        private readonly IUnitOfWork _unitOfWork;
+
+        public UserManager(IUserDal userDal, ILogService logService, IUnitOfWork unitOfWork)
         {
             _userDal = userDal;
             _logService = logService;
+            _unitOfWork = unitOfWork;
         }
 
-        public IResult Add(User user)
+        public async Task<IResult> Add(User user)
         {
             IResult result = ValidateUser(user);
             if (!result.Success)
@@ -55,7 +57,7 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckDuplicateEmail(user.Email);
+            result = await CheckDuplicateEmail(user.Email);
             if (!result.Success)
             {
                 return result;
@@ -69,13 +71,14 @@ namespace InvestmentOperations.Business.Concrete
                 Details = $"{user.FirstName} {user.LastName} ({user.Email}) registered.",
                 Status = LogStatus.Success
             });
+            _unitOfWork.SaveChanges();
 
             return new SuccessResult("User added successfully.");
         }
 
-        public IResult Delete(int id)
+        public async Task<IResult> Delete(int id)
         {
-            var user = _userDal.Get(u => u.UserId == id);
+            var user = await _userDal.GetAsync(u => u.UserId == id);
             if (user == null)
             {
                 return new ErrorResult("User not found.");
@@ -89,13 +92,14 @@ namespace InvestmentOperations.Business.Concrete
                 Details = $"{user.FirstName} {user.LastName} ({user.Email}) deleted.",
                 Status = LogStatus.Success
             });
+            _unitOfWork.SaveChanges();
 
             return new SuccessResult("User deleted successfully.");
         }
 
-        public IDataResult<User> GetById(int id)
+        public async Task<IDataResult<User>> GetById(int id)
         {
-            var user = _userDal.Get(u => u.UserId == id);
+            var user = await _userDal.GetAsync(u => u.UserId == id);
             if (user == null)
             {
                 return new ErrorDataResult<User>("User not found.");
@@ -104,17 +108,17 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
-        public IDataResult<List<User>> GetAll()
+        public async Task<IDataResult<List<User>>> GetAll()
         {
             return new SuccessDataResult<List<User>>
               (
-                _userDal.GetAll(), "Users listed."
+                await _userDal.GetAllAsync(), "Users listed."
               );
         }
 
-        public IResult Update(User user)
+        public async Task<IResult> Update(User user)
         {
-            var existingUser = _userDal.Get(u => u.UserId == user.UserId);
+            var existingUser = await _userDal.GetAsync(u => u.UserId == user.UserId);
             if (existingUser == null)
             {
                 return new ErrorResult("User not found.");
@@ -142,7 +146,7 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckDuplicateEmail(user.Email, user.UserId);
+            result = await CheckDuplicateEmail(user.Email, user.UserId);
             if (!result.Success)
             {
                 return result;
@@ -156,13 +160,14 @@ namespace InvestmentOperations.Business.Concrete
                 Details = $"{user.FirstName} {user.LastName} ({user.Email}) updated.",
                 Status = LogStatus.Success
             });
+            _unitOfWork.SaveChanges();
 
             return new SuccessResult("User updated successfully.");
         }
 
-        public IDataResult<User> Login(UserForLoginDto dto)
+        public async Task<IDataResult<User>> Login(UserForLoginDto dto)
         {
-            var user = _userDal.Get(u => u.Email == dto.Email.Trim().ToLowerInvariant());
+            var user = await _userDal.GetAsync(u => u.Email == dto.Email.Trim().ToLowerInvariant());
             if (user == null)
             {
                 _logService.Add(new Log
@@ -268,9 +273,9 @@ namespace InvestmentOperations.Business.Concrete
             }
             return new SuccessResult();
         }
-        private IResult CheckDuplicateEmail(string email, int excludeUserId = 0)
+        private async Task<IResult> CheckDuplicateEmail(string email, int excludeUserId = 0)
         {
-            var user = _userDal.Get(u => u.Email == email && u.UserId != excludeUserId);
+            var user = await _userDal.GetAsync(u => u.Email == email && u.UserId != excludeUserId);
             if (user != null)
             {
                 return new ErrorResult("This email address is already registered.");

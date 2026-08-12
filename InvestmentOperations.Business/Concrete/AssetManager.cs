@@ -1,4 +1,4 @@
-﻿using InvestmentOperations.Core.Utilities.Results;
+using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
@@ -13,6 +13,7 @@ using Microsoft.Extensions.Primitives;
 using System.Security.Claims;
 using IHttpContextAccessor = Microsoft.AspNetCore.Http.IHttpContextAccessor;
 using InvestmentOperations.Entities.Enums;
+using InvestmentOperations.Core.DataAccess;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -22,14 +23,16 @@ namespace InvestmentOperations.Business.Concrete
         private readonly HybridCache _cache;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogService _logService;
-        public AssetManager(IAssetDal assetDal, HybridCache cache, IHttpContextAccessor httpContectAccessor, ILogService logService)
+        private readonly IUnitOfWork _unitOfWork;
+        public AssetManager(IAssetDal assetDal, HybridCache cache, IHttpContextAccessor httpContectAccessor, ILogService logService,IUnitOfWork unitOfWork)
         {
             _assetDal = assetDal;
             _cache = cache;
             _httpContextAccessor = httpContectAccessor;
             _logService = logService;
+            _unitOfWork = unitOfWork;
         }
-        public IResult Add(Asset asset)
+        public async Task<IResult> Add(Asset asset)
         {
             IResult result = ValidateAsset(asset);
             if (!result.Success)
@@ -46,30 +49,31 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckDuplicateAssetCode(asset.AssetCode);
+            result = await CheckDuplicateAssetCode(asset.AssetCode);
             if (!result.Success)
             {
                 return result;
             }
 
-            result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
+            result = await CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
             if (!result.Success)
 
                 return result;
 
 
             _assetDal.Add(asset);
-           
-            _cache.RemoveAsync("assets:all").AsTask().GetAwaiter().GetResult();
+
+            await  _cache.RemoveAsync("assets:all");
 
             LogAction("AssetAdded", $"AssetCode: {asset.AssetCode}, AssetName: {asset.AssetName}");
-           
+            _unitOfWork.SaveChanges();
+
             return new SuccessResult("Asset added successfully.");
         }
 
-        public IResult Delete(int id)
+        public  async Task<IResult> Delete(int id)
         {
-            var asset = _assetDal.Get(a => a.AssetId == id);
+            var asset = await _assetDal.GetAsync(a => a.AssetId == id);
 
             if (asset == null)
             {
@@ -77,20 +81,21 @@ namespace InvestmentOperations.Business.Concrete
             }
             _assetDal.Delete(asset);
 
-            _cache.RemoveAsync($"assets:{id}").AsTask().GetAwaiter().GetResult();
-            _cache.RemoveAsync("assets:all").AsTask().GetAwaiter().GetResult();
+            await _cache.RemoveAsync($"assets:{id}");
+            await _cache.RemoveAsync("assets:all");
 
             LogAction("AssetDeleted", $"AssetId: {id}");
-            
+            _unitOfWork.SaveChanges();
+
+
             return new SuccessResult("Asset deleted successfully.");
 
         }
-        public IDataResult<Asset> GetById(int id)
+        public async Task<IDataResult<Asset>> GetById(int id)
         {
-            Asset asset = _cache.GetOrCreateAsync($"asset:{id}",
-                async cancellationToken => _assetDal.Get(a => a.AssetId == id),
-                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) }
-            ).AsTask().GetAwaiter().GetResult();
+            Asset asset = await _cache.GetOrCreateAsync($"asset:{id}",
+                async cancellationToken => await _assetDal.GetAsync(a => a.AssetId == id),
+                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) });
 
             if (asset == null)
             {
@@ -99,22 +104,21 @@ namespace InvestmentOperations.Business.Concrete
             LogAction("AssetViewed", $"AssetId: {id}");
             return new SuccessDataResult<Asset>(asset, "Asset found.");
         }
-        public IDataResult<List<Asset>> GetAll()
+        public async Task<IDataResult<List<Asset>>> GetAll()
         {
-            List<Asset> assets = _cache.GetOrCreateAsync(
+            List<Asset> assets = await _cache.GetOrCreateAsync(
                 "assets:all",
-                async cancellationToken => _assetDal.GetAll(),
-                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) })
-                .AsTask().GetAwaiter().GetResult();
+                async cancellationToken => await _assetDal.GetAllAsync(),
+                new HybridCacheEntryOptions { Expiration = TimeSpan.FromHours(1) });
 
             LogAction("AssetsListed", $"Count: {assets.Count}");
 
             return new SuccessDataResult<List<Asset>>(assets, "Assets listed.");
         }
 
-        public IResult Update(Asset asset)
+        public  async Task<IResult> Update(Asset asset)
         {
-            var existingAsset = _assetDal.Get(a => a.AssetId == asset.AssetId);
+            var existingAsset = await _assetDal.GetAsync(a => a.AssetId == asset.AssetId);
             if (existingAsset == null)
             {
                 return new ErrorResult("Asset not found.");
@@ -134,22 +138,25 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckDuplicateAssetCode(asset.AssetCode, asset.AssetId);
+            result = await CheckDuplicateAssetCode(asset.AssetCode, asset.AssetId);
             if (!result.Success)
                 return result;
 
 
-            result = CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
+            result = await CheckDuplicateAssetName(asset.AssetName, asset.AssetId);
             if (!result.Success)
                 return result;
 
             _assetDal.Update(asset);
-           
-            _cache.RemoveAsync($"asset:{asset.AssetId}").AsTask().GetAwaiter().GetResult();
-            _cache.RemoveAsync("assets:all").AsTask().GetAwaiter().GetResult();
+
+            await _cache.RemoveAsync($"asset:{asset.AssetId}");
+           await  _cache.RemoveAsync("assets:all");
 
             LogAction("AssetUpdated", $"AssetId: {asset.AssetId}, AssetCode: {asset.AssetCode}, AssetName: {asset.AssetName}");
-            
+
+             _unitOfWork.SaveChanges();
+
+
             return new SuccessResult("Asset updated successfully.");
         }
 
@@ -195,14 +202,14 @@ namespace InvestmentOperations.Business.Concrete
             asset.AssetCode = asset.AssetCode.Trim().ToUpperInvariant();
             asset.AssetType = asset.AssetType.Trim().ToUpperInvariant();
         }
-        private IResult CheckDuplicateAssetCode(string assetCode, int excludeAssetId = 0)
+        private async Task<IResult> CheckDuplicateAssetCode(string assetCode, int excludeAssetId = 0)
         {
             if (string.IsNullOrWhiteSpace(assetCode))
             {
                 return new ErrorResult("Asset Code cannot be empty");
 
             }
-            var allAssets = _assetDal.GetAll();
+            var allAssets = await _assetDal.GetAllAsync();
             if (allAssets != null && allAssets.Count > 0)
             {
                 bool isDuplicate = allAssets.Any(a => a.AssetId != excludeAssetId &&
@@ -216,14 +223,14 @@ namespace InvestmentOperations.Business.Concrete
             }
             return new SuccessResult();
         }
-        private IResult CheckDuplicateAssetName(string assetName, int excludeAssetId = 0)
+        private async Task<IResult> CheckDuplicateAssetName(string assetName, int excludeAssetId = 0)
         {
             if (string.IsNullOrWhiteSpace(assetName))
             {
                 return new ErrorResult("Asset Name cannot be empty");
             }
 
-            var allAssets = _assetDal.GetAll();
+            var allAssets = await _assetDal.GetAllAsync();
             if (allAssets != null && allAssets.Count > 0)
             {
                 bool isDuplicate = allAssets.Any(a => a.AssetId != excludeAssetId &&

@@ -14,6 +14,7 @@ using System.Security;
 using System.Security.Claims;
 using IHttpContextAccessor = Microsoft.AspNetCore.Http.IHttpContextAccessor;
 using InvestmentOperations.Entities.Enums;
+using InvestmentOperations.Core.DataAccess;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -23,15 +24,17 @@ namespace InvestmentOperations.Business.Concrete
         private readonly IAssetDal _assetDal;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogService _logService;
-        public PriceManager(IPriceDal priceDal, IAssetDal assetDal, IHttpContextAccessor httpContextAccessor, ILogService logService)
+        private readonly IUnitOfWork _unitOfWork;
+        public PriceManager(IPriceDal priceDal, IAssetDal assetDal, IHttpContextAccessor httpContextAccessor, ILogService logService, IUnitOfWork unitOfWork)
         {
             _priceDal = priceDal;
             _assetDal = assetDal;
             _httpContextAccessor = httpContextAccessor;
             _logService = logService;
+            _unitOfWork = unitOfWork;
 
         }
-        public IResult Add(Price price)
+        public async Task<IResult> Add(Price price)
         {
             PreparePrice(price);
             IResult result = ValidatePrice(price);
@@ -45,13 +48,13 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckExistingAsset(price.AssetId);
+            result = await CheckExistingAsset(price.AssetId);
             if (!result.Success)
             {
                 return result;
             }
 
-            result = CheckDuplicatePrice(price.AssetId);
+            result = await CheckDuplicatePrice(price.AssetId);
             if (!result.Success)
             {
                 return result;
@@ -60,11 +63,14 @@ namespace InvestmentOperations.Business.Concrete
 
             LogAction("PriceAdded", $"AssetId: {price.AssetId}, CurrentPrice: {price.CurrentPrice}");
 
+            _unitOfWork.SaveChanges();
+
+
             return new SuccessResult("Price added successfully.");
         }
-        public IResult Delete(int id)
+        public async Task<IResult> Delete(int id)
         {
-            var price = _priceDal.Get(p => p.PriceId == id);
+            var price = await _priceDal.GetAsync(p => p.PriceId == id);
             if (price == null)
             {
                 return new ErrorResult("Price not found.");
@@ -73,31 +79,38 @@ namespace InvestmentOperations.Business.Concrete
 
             LogAction("PriceDeleted", $"PriceId: {id}");
 
+            _unitOfWork.SaveChanges();
+
+
             return new SuccessResult("Price deleted successfully.");
         }
-        public IDataResult<PriceDto> GetById(int id)
+        public async Task<IDataResult<PriceDto>> GetById(int id)
         {
-            var price = _priceDal.Get(p => p.PriceId == id);
+            var price = await _priceDal.GetAsync(p => p.PriceId == id);
             if (price == null)
             {
                 return new ErrorDataResult<PriceDto>("Price not found");
             }
             LogAction("PriceViewed", $"PriceId: {id}");
-            
-            return new SuccessDataResult<PriceDto>(MapToDto(price), "Price found.");
+
+            return new SuccessDataResult<PriceDto>(await MapToDto(price), "Price found.");
         }
-        public IDataResult<List<PriceDto>> GetAll()
+        public async Task<IDataResult<List<PriceDto>>> GetAll()
         {
-            var prices = _priceDal.GetAll();
-            var dtos = prices.Select(MapToDto).ToList();
+            var prices = await _priceDal.GetAllAsync();
+            var dtos = new List<PriceDto>();
+            foreach (var price in prices)
+            {
+                dtos.Add(await MapToDto(price));
+            }
 
             LogAction("PricesListed", $"Count: {dtos.Count}");
 
             return new SuccessDataResult<List<PriceDto>>(dtos, "Prices listed.");
         }
-        public IDataResult<Price> GetByAssetId(int assetId)
+        public async Task<IDataResult<Price>> GetByAssetId(int assetId)
         {
-            var price = _priceDal.Get(p => p.AssetId == assetId);
+            var price = await _priceDal.GetAsync(p => p.AssetId == assetId);
             if (price == null)
             {
                 return new ErrorDataResult<Price>("Price not found for this asset.");
@@ -106,9 +119,9 @@ namespace InvestmentOperations.Business.Concrete
 
             return new SuccessDataResult<Price>(price, "Price found.");
         }
-        public IResult Update(Price price)
+        public async Task<IResult> Update(Price price)
         {
-            var existingPrice = _priceDal.Get(p => p.PriceId == price.PriceId);
+            var existingPrice = await _priceDal.GetAsync(p => p.PriceId == price.PriceId);
             if (existingPrice == null)
             {
                 return new ErrorResult("Price not found.");
@@ -125,7 +138,7 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckExistingAsset(price.AssetId);
+            result = await CheckExistingAsset(price.AssetId);
             if (!result.Success)
             {
                 return result;
@@ -137,12 +150,14 @@ namespace InvestmentOperations.Business.Concrete
 
             LogAction("PriceUpdated", $"PriceId: {price.PriceId}, AssetId: {price.AssetId}, CurrentPrice: {price.CurrentPrice}");
 
+            _unitOfWork.SaveChanges();
+
             return new SuccessResult("Price updated successfully.");
         }
 
-        private PriceDto MapToDto(Price price)
+        private async Task<PriceDto> MapToDto(Price price)
         {
-            var asset = _assetDal.Get(a => a.AssetId == price.AssetId);
+            var asset = await _assetDal.GetAsync(a => a.AssetId == price.AssetId);
             return new PriceDto
             {
                 PriceId = price.PriceId,
@@ -201,9 +216,9 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
-        private IResult CheckDuplicatePrice(int assetId)
+        private async Task<IResult> CheckDuplicatePrice(int assetId)
         {
-            var price = _priceDal.Get(p => p.AssetId == assetId);
+            var price = await _priceDal.GetAsync(p => p.AssetId == assetId);
             if (price != null)
             {
                 return new ErrorResult("This Asset already has a price.");
@@ -212,9 +227,9 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult();
         }
 
-        private IResult CheckExistingAsset(int assetId)
+        private async Task<IResult> CheckExistingAsset(int assetId)
         {
-            var asset = _assetDal.Get(a => a.AssetId == assetId);
+            var asset = await _assetDal.GetAsync(a => a.AssetId == assetId);
             if (asset == null)
             {
                 return new ErrorResult("Asset not found.");

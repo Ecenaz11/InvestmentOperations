@@ -30,7 +30,7 @@ namespace InvestmentOperations.API.Controllers
 
             if (dto != null && dto.Id != null)
             {
-                var result = _assetHoldingService.GetByIdDetailed(dto.Id.Value);
+                var result = await _assetHoldingService.GetByIdDetailed(dto.Id.Value);
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -51,7 +51,7 @@ namespace InvestmentOperations.API.Controllers
                     return Forbid();
                 }
 
-                var userResult = _assetHoldingService.GetByUserIdDetailed(dto.UserId.Value);
+                var userResult = await _assetHoldingService.GetByUserIdDetailed(dto.UserId.Value);
                 if (!userResult.Success)
                 {
                     return BadRequest(userResult.Message);
@@ -59,7 +59,7 @@ namespace InvestmentOperations.API.Controllers
                 return Ok(userResult);
             }
 
-            var allResult = isAdmin ? _assetHoldingService.GetAllDetailed() : _assetHoldingService.GetByUserIdDetailed(callerId);
+            var allResult = isAdmin ? await _assetHoldingService.GetAllDetailed() : await _assetHoldingService.GetByUserIdDetailed(callerId);
             if (!allResult.Success)
             {
                 return BadRequest(allResult.Message);
@@ -68,7 +68,7 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(AssetHoldingForAddDto dto)
+        public async Task<IActionResult> Add(AssetHoldingForAddDto dto)
         {
             int targetUserId = dto.UserId;
             if(!User.IsInRole("Admin"))
@@ -83,7 +83,7 @@ namespace InvestmentOperations.API.Controllers
                 Amount = dto.Amount
             };
 
-            var result = _assetHoldingService.Add(assetHolding);
+            var result = await _assetHoldingService.Add(assetHolding);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -93,14 +93,14 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost("deposit")]
-        public IActionResult Deposit(DepositDto dto)
+        public async Task<IActionResult> Deposit(DepositDto dto)
         {
             int targetUserId = dto.UserId;
             if(!User.IsInRole("Admin"))
             {
                 targetUserId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             }
-            var result = _assetHoldingService.Deposit(dto.UserId, dto.Amount);
+            var result = await _assetHoldingService.Deposit(dto.UserId, dto.Amount);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

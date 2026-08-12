@@ -1,17 +1,14 @@
-﻿using InvestmentOperations.Core.Utilities.Results;
+using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using InvestmentOperations.Entities.Dtos;
-using System.Security.Cryptography;
-using System.Reflection.Metadata.Ecma335;
 using InvestmentOperations.Entities.Enums;
-using Microsoft.Extensions.DependencyInjection;
+using InvestmentOperations.Core.DataAccess;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -38,27 +35,27 @@ namespace InvestmentOperations.Business.Concrete
             _unitOfWork = unitOfWork;
         }
 
-        public IResult Add(Trade trade)
+        public async Task<IResult> Add(Trade trade)
         {
-            IResult result = CheckDuplicateTradeId(trade.TradeId);
+            IResult result = await CheckDuplicateTradeId(trade.TradeId);
             if (!result.Success)
             {
                 return result;
             }
 
-            result = CheckRelations(trade);
+            result = await CheckRelations(trade);
             if (!result.Success)
             {
                 return result;
             }
 
-            result = CheckAssetIsNotTL(trade.AssetId);
+            result = await CheckAssetIsNotTL(trade.AssetId);
             if (!result.Success)
             {
                 return result;
             }
 
-            result = SetCurrentUnitPrice(trade);
+            result = await SetCurrentUnitPrice(trade);
             if (!result.Success)
             {
                 return result;
@@ -74,10 +71,10 @@ namespace InvestmentOperations.Business.Concrete
 
             if (trade.TradeType == TradeType.SELL)
             {
-                result = CheckSufficientAssetHolding(trade.UserId, trade.AssetId, trade.Quantity);
+                result = await CheckSufficientAssetHolding(trade.UserId, trade.AssetId, trade.Quantity);
                 if (!result.Success)
                 {
-                    var asset = _assetService.GetById(trade.AssetId).Data;
+                    var asset = (await _assetService.GetById(trade.AssetId)).Data;
                     _logService.Add(new Log
                     {
                         UserId = trade.UserId,
@@ -91,10 +88,10 @@ namespace InvestmentOperations.Business.Concrete
 
             if (trade.TradeType == TradeType.BUY)
             {
-                var tlAsset = GetTLAsset();
+                var tlAsset = await GetTLAsset();
                 if (tlAsset != null)
                 {
-                    result = CheckSufficientAssetHolding(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
+                    result = await CheckSufficientAssetHolding(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
                     if (!result.Success)
                     {
                         _logService.Add(new Log
@@ -114,9 +111,9 @@ namespace InvestmentOperations.Business.Concrete
             try
             {
                 _tradeDal.Add(trade);
-                UpdateAssetHoldingsAfterTrade(trade);
+                await UpdateAssetHoldingsAfterTrade(trade);
                 _unitOfWork.SaveChanges();
-               
+
                 _logService.Add(new Log
             {
                 UserId = trade.UserId,
@@ -124,7 +121,7 @@ namespace InvestmentOperations.Business.Concrete
                 Details = $"{trade.TradeType} - AssetId: {trade.AssetId}, Quantity: {trade.Quantity}, UnitPrice: {trade.UnitPrice}, totalPrice: {trade.TotalPrice}",
                 Status = LogStatus.Success
             });
-           
+
             _unitOfWork.Commit();
             }
             catch
@@ -135,33 +132,41 @@ namespace InvestmentOperations.Business.Concrete
 
             return new SuccessResult("Trade added successfully.");
         }
-        
-        public IDataResult<List<TradeDto>> GetAll()
+
+        public async Task<IDataResult<List<TradeDto>>> GetAll()
         {
-            var trades = _tradeDal.GetAll();
-            var dtos = trades.Select(MapToDto).ToList();
+            var trades = await _tradeDal.GetAllAsync();
+            var dtos = new List<TradeDto>();
+            foreach (var trade in trades)
+            {
+                dtos.Add(await MapToDto(trade));
+            }
             return new SuccessDataResult<List<TradeDto>>(dtos, "Trades listed.");
         }
-        public IDataResult<List<TradeDto>> GetByUserId(int userId)
+        public async Task<IDataResult<List<TradeDto>>> GetByUserId(int userId)
         {
-            var trades = _tradeDal.GetAll(t => t.UserId == userId);
-            var dtos = trades.Select(MapToDto).ToList();
+            var trades = await _tradeDal.GetAllAsync(t => t.UserId == userId);
+            var dtos = new List<TradeDto>();
+            foreach (var trade in trades)
+            {
+                dtos.Add(await MapToDto(trade));
+            }
             return new SuccessDataResult<List<TradeDto>>(dtos, "Trades listed.");
         }
 
-        public IDataResult<TradeDto> GetById(int id)
+        public async Task<IDataResult<TradeDto>> GetById(int id)
         {
-            var trade = _tradeDal.Get(t => t.TradeId == id);
+            var trade = await _tradeDal.GetAsync(t => t.TradeId == id);
             if (trade == null)
             {
                 return new ErrorDataResult<TradeDto>("Trade not found.");
             }
-            return new SuccessDataResult<TradeDto>(MapToDto(trade), "Trade retrieved successfully.");
+            return new SuccessDataResult<TradeDto>(await MapToDto(trade), "Trade retrieved successfully.");
         }
-        
-        private TradeDto MapToDto(Trade trade)
+
+        private async Task<TradeDto> MapToDto(Trade trade)
         {
-            var asset = _assetService.GetById(trade.AssetId).Data;
+            var asset = (await _assetService.GetById(trade.AssetId)).Data;
             return new TradeDto
             {
                 TradeId = trade.TradeId,
@@ -206,15 +211,15 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
-        private IResult CheckRelations(Trade trade)
+        private async Task<IResult> CheckRelations(Trade trade)
         {
-            var user = _userService.GetById(trade.UserId);
+            var user = await _userService.GetById(trade.UserId);
             if (!user.Success)
             {
                 return new ErrorResult($"Transaction failed. User with ID {trade.UserId} does not exist.");
             }
 
-            var asset = _assetService.GetById(trade.AssetId);
+            var asset = await _assetService.GetById(trade.AssetId);
             if (!asset.Success)
             {
                 return new ErrorResult($"Transaction failed. Asset with ID {trade.AssetId} does not exist.");
@@ -224,9 +229,9 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
-        private IResult CheckDuplicateTradeId(int tradeId)
+        private async Task<IResult> CheckDuplicateTradeId(int tradeId)
         {
-            var existingTrade = _tradeDal.Get(t => t.TradeId == tradeId);
+            var existingTrade = await _tradeDal.GetAsync(t => t.TradeId == tradeId);
             if (existingTrade != null)
             {
                 return new ErrorResult($"A trade record with ID {tradeId} already exists.");
@@ -236,14 +241,14 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
-        private Asset GetTLAsset()
+        private async Task<Asset> GetTLAsset()
         {
-            return _assetService.GetAll().Data?.FirstOrDefault(a => a.AssetCode == "TL");
+            return (await _assetService.GetAll()).Data?.FirstOrDefault(a => a.AssetCode == "TL");
         }
 
-        private IResult SetCurrentUnitPrice(Trade trade)
+        private async Task<IResult> SetCurrentUnitPrice(Trade trade)
         {
-            var priceResult = _priceService.GetByAssetId(trade.AssetId);
+            var priceResult = await _priceService.GetByAssetId(trade.AssetId);
             if (!priceResult.Success)
             {
                 return new ErrorResult("No current price was found for this asset.");
@@ -252,9 +257,9 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult();
         }
 
-        private IResult CheckAssetIsNotTL(int assetId)
+        private async Task<IResult> CheckAssetIsNotTL(int assetId)
         {
-            var tlAsset = GetTLAsset();
+            var tlAsset = await GetTLAsset();
             if (tlAsset != null && assetId == tlAsset.AssetId)
             {
                 return new ErrorResult("TL cannot be traded directly.");
@@ -263,9 +268,9 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult();
         }
 
-        private IResult CheckSufficientAssetHolding(int userId, int assetId, decimal requiredAmount)
+        private async Task<IResult> CheckSufficientAssetHolding(int userId, int assetId, decimal requiredAmount)
         {
-            var assetHolding = _assetHoldingService.GetByUserId(userId).Data?.FirstOrDefault(a => a.AssetId == assetId);
+            var assetHolding = (await _assetHoldingService.GetByUserId(userId)).Data?.FirstOrDefault(a => a.AssetId == assetId);
             decimal currentAmount = assetHolding?.Amount ?? 0;
 
             if (currentAmount < requiredAmount)
@@ -277,9 +282,9 @@ namespace InvestmentOperations.Business.Concrete
         }
 
 
-        private void ApplyAssetHoldingChange(int userId, int assetId, decimal amountDelta)
+        private async Task ApplyAssetHoldingChange(int userId, int assetId, decimal amountDelta)
         {
-            var existingAssetHolding = _assetHoldingService.GetByUserId(userId).Data?.FirstOrDefault(a => a.AssetId == assetId);
+            var existingAssetHolding = (await _assetHoldingService.GetByUserId(userId)).Data?.FirstOrDefault(a => a.AssetId == assetId);
 
             if (existingAssetHolding == null)
             {
@@ -297,9 +302,9 @@ namespace InvestmentOperations.Business.Concrete
                 _assetHoldingDal.Update(existingAssetHolding);
             }
         }
-        private void UpdateAssetHoldingsAfterTrade(Trade trade)
+        private async Task UpdateAssetHoldingsAfterTrade(Trade trade)
         {
-            var tlAsset = GetTLAsset();
+            var tlAsset = await GetTLAsset();
             if (tlAsset == null)
             {
                 return;
@@ -307,13 +312,13 @@ namespace InvestmentOperations.Business.Concrete
 
             if (trade.TradeType == TradeType.BUY)
             {
-                ApplyAssetHoldingChange(trade.UserId, tlAsset.AssetId, -trade.TotalPrice);
-                ApplyAssetHoldingChange(trade.UserId, trade.AssetId, trade.Quantity);
+                await ApplyAssetHoldingChange(trade.UserId, tlAsset.AssetId, -trade.TotalPrice);
+                await ApplyAssetHoldingChange(trade.UserId, trade.AssetId, trade.Quantity);
             }
             else if (trade.TradeType == TradeType.SELL)
             {
-                ApplyAssetHoldingChange(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
-                ApplyAssetHoldingChange(trade.UserId, trade.AssetId, -trade.Quantity);
+                await ApplyAssetHoldingChange(trade.UserId, tlAsset.AssetId, trade.TotalPrice);
+                await ApplyAssetHoldingChange(trade.UserId, trade.AssetId, -trade.Quantity);
             }
         }
 

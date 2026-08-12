@@ -10,11 +10,11 @@ namespace InvestmentOperations.Business.Abstract
 {
     public interface IPriceService
     {
-        IResult Add(Price price);
-        IResult Update(Price price);
-        IResult Delete(int id);
-        IDataResult<PriceDto> GetById(int id);
-        IDataResult<List<PriceDto>> GetAll();
-        IDataResult<Price> GetByAssetId(int assetId);
+        Task<IResult> Add(Price price);
+        Task<IResult> Delete(int id);
+        Task<IDataResult<PriceDto>> GetById(int id);
+        Task<IDataResult<List<PriceDto>>> GetAll();
+        Task<IDataResult<Price>> GetByAssetId(int assetId);
+        Task<IResult> Update(Price price);
     }
 }

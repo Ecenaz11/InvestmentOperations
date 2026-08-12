@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq.Expressions;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -19,18 +20,18 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost("get")]
-        public IActionResult Get(PriceQueryDto dto)
+        public async Task<IActionResult> Get(PriceQueryDto dto)
         {
             if (dto == null || dto.Id == null)
             {
-                var allResult = _priceService.GetAll();
+                var allResult = await _priceService.GetAll();
                 if (!allResult.Success)
                 {
                     return BadRequest(allResult.Message);
                 }
                 return Ok(allResult);
             }
-            var result = _priceService.GetById(dto.Id.Value);
+            var result = await _priceService.GetById(dto.Id.Value);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -40,7 +41,7 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult Add(PriceForAddDto dto)
+        public async Task<IActionResult> Add(PriceForAddDto dto)
         {
             var price = new Price
             {
@@ -48,7 +49,7 @@ namespace InvestmentOperations.API.Controllers
                 CurrentPrice = dto.CurrentPrice
             };
 
-            var result = _priceService.Add(price);
+            var result = await _priceService.Add(price);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -60,7 +61,7 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpPut]
         [Authorize(Roles = "Admin")]
-        public IActionResult Update(PriceForUpdateDto dto)
+        public async Task<IActionResult> Update(PriceForUpdateDto dto)
         {
             var price = new Price
             {
@@ -69,7 +70,7 @@ namespace InvestmentOperations.API.Controllers
                 CurrentPrice = dto.CurrentPrice
             };
 
-            var result = _priceService.Update(price);
+            var result = await _priceService.Update(price);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -80,9 +81,9 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = _priceService.Delete(id);
+            var result = await _priceService.Delete(id);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

@@ -3,6 +3,7 @@ using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using InvestmentOperations.Entities.Concrete;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -21,9 +22,9 @@ namespace InvestmentOperations.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public IActionResult Login(UserForLoginDto dto)
+        public async Task<IActionResult> Login(UserForLoginDto dto)
         {
-            var result = _userService.Login(dto);
+            var result = await _userService.Login(dto);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -35,7 +36,7 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpPost("register")]
         [AllowAnonymous]
-        public IActionResult Register(UserForRegisterDto dto)
+        public async Task<IActionResult> Register(UserForRegisterDto dto)
         {
             var user = new User
             {
@@ -45,7 +46,7 @@ namespace InvestmentOperations.API.Controllers
                 PasswordHash = dto.Password
             };
 
-            var result = _userService.Add(user);
+            var result = await _userService.Add(user);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

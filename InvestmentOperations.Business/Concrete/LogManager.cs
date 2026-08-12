@@ -5,15 +5,19 @@ using InvestmentOperations.Entities.Concrete;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using InvestmentOperations.Core.DataAccess;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.Business.Concrete
 {
     public class LogManager : ILogService
     {
         private readonly ILogDal _logDal;
-        public LogManager(ILogDal logDal)
+        private readonly IUnitOfWork _unitOfWork;
+        public LogManager(ILogDal logDal, IUnitOfWork unitOfWork)
         {
             _logDal = logDal;
+            _unitOfWork = unitOfWork;
         }
         public IResult Add(Log log)
         {
@@ -26,16 +30,18 @@ namespace InvestmentOperations.Business.Concrete
             PrepareLog(log);
 
             _logDal.Add(log);
+            _unitOfWork.SaveChanges();
+
             return new SuccessResult("Log added successfully.");
         }
-        public IDataResult<List<Log>> GetAll()
+        public async Task<IDataResult<List<Log>>> GetAll()
         {
-            return new SuccessDataResult<List<Log>>(_logDal.GetAll(), "logs listed.");
+            return new SuccessDataResult<List<Log>>(await _logDal.GetAllAsync(), "logs listed.");
         }
 
-        public IDataResult<List<Log>> GetByUserId(int userId)
+        public async Task<IDataResult<List<Log>>> GetByUserId(int userId)
         {
-            return new SuccessDataResult<List<Log>>(_logDal.GetByUserId(userId), "Logs listed.");
+            return new SuccessDataResult<List<Log>>(await _logDal.GetByUserIdAsync(userId), "Logs listed.");
         }
 
         #region Validation Methods

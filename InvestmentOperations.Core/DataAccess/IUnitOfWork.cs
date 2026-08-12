@@ -1,4 +1,4 @@
-namespace InvestmentOperations.DataAccess.Abstract;
+namespace InvestmentOperations.Core.DataAccess;
 
 public interface IUnitOfWork
 {

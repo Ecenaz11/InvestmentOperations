@@ -4,16 +4,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.Business.Abstract
 {
     public interface IAssetService
     {
-        IDataResult<List<Asset>> GetAll();
-        IDataResult<Asset> GetById(int id);
-        IResult Add(Asset asset);
-        IResult Delete(int id);
-        IResult Update(Asset asset);
-
+        Task<IDataResult<List<Asset>>> GetAll();
+        Task<IDataResult<Asset>> GetById(int id);
+        Task<IResult> Add(Asset asset);
+        Task<IResult> Delete(int id);
+        Task<IResult> Update(Asset asset);
     }
 }

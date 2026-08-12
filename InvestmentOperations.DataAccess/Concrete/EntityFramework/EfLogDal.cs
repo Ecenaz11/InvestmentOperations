@@ -2,6 +2,8 @@ using InvestmentOperations.DataAccess.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
 {
@@ -16,17 +18,16 @@ namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
         public void Add(Log log)
         {
             _context.Logs.Add(log);
-            _context.SaveChanges();
         }
 
-        public List<Log> GetAll()
+        public async Task<List<Log>> GetAllAsync()
         {
-            return _context.Logs.ToList();
+            return await _context.Logs.ToListAsync();
         }
 
-        public List<Log> GetByUserId(int userId)
+        public async Task<List<Log>> GetByUserIdAsync(int userId)
         {
-            return _context.Logs.Where(l=>l.UserId==userId).ToList();
+            return await _context.Logs.Where(l => l.UserId == userId).ToListAsync();
         }
     }
 }

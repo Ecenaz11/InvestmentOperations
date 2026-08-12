@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -20,11 +21,11 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost("get")]
-        public IActionResult Get(LogsQueryDto dto)
+        public async Task<IActionResult> Get(LogsQueryDto dto)
         {
             if (dto == null || dto.Id == null)
             {
-                var result = _logService.GetAll();
+                var result = await _logService.GetAll();
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -32,7 +33,7 @@ namespace InvestmentOperations.API.Controllers
                 var logDtos = result.Data.Select(MapToDto).ToList();
                 return Ok(logDtos);
             }
-            var userResult = _logService.GetByUserId(dto.Id.Value);
+            var userResult = await _logService.GetByUserId(dto.Id.Value);
             if (!userResult.Success)
             {
                 return BadRequest(userResult.Message);

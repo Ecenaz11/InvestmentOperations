@@ -1,20 +1,18 @@
-﻿using InvestmentOperations.Core.Utilities.Results;
+using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Entities.Concrete;
-using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using InvestmentOperations.Entities.Dtos;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.Business.Abstract
 {
     public interface IUserService
     {
-        IResult Add(User user);
-        IResult Delete(int id);
-        IResult Update(User user);
-        IDataResult<List<User>> GetAll();
-        IDataResult<User> GetById(int id);
-        IDataResult<User> Login(UserForLoginDto dto);
+        Task<IResult> Add(User user);
+        Task<IResult> Delete(int id);
+        Task<IResult> Update(User user);
+        Task<IDataResult<List<User>>> GetAll();
+        Task<IDataResult<User>> GetById(int id);
+        Task<IDataResult<User>> Login(UserForLoginDto dto);
     }
 }

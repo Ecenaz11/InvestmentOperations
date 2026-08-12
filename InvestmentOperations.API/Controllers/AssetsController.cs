@@ -1,10 +1,11 @@
-﻿using InvestmentOperations.Business.Abstract;
+using InvestmentOperations.Business.Abstract;
 using InvestmentOperations.Entities.Concrete;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using InvestmentOperations.Entities.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.API.Controllers
 {
@@ -19,18 +20,18 @@ namespace InvestmentOperations.API.Controllers
         }
 
         [HttpPost("get")]
-        public IActionResult Get(AssetQueryDto dto)
+        public async Task<IActionResult> Get(AssetQueryDto dto)
         {
             if (dto == null || dto.Id == null)
             {
-                var allResult = _assetService.GetAll();
+                var allResult = await _assetService.GetAll();
                 if (!allResult.Success)
                 {
                     return BadRequest(allResult.Message);
                 }
                 return Ok(allResult);
             }
-            var result = _assetService.GetById(dto.Id.Value);
+            var result = await _assetService.GetById(dto.Id.Value);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -40,7 +41,7 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult Add(AssetForAddDto dto)
+        public async Task<IActionResult> Add(AssetForAddDto dto)
         {
             var asset = new Asset
             {
@@ -49,7 +50,7 @@ namespace InvestmentOperations.API.Controllers
                 AssetCode = dto.AssetCode
             };
 
-            var result = _assetService.Add(asset);
+            var result = await _assetService.Add(asset);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -61,7 +62,7 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpPut]
         [Authorize(Roles = "Admin")]
-        public IActionResult Update(AssetForUpdateDto dto)
+        public async Task<IActionResult> Update(AssetForUpdateDto dto)
         {
             var asset = new Asset
             {
@@ -71,7 +72,7 @@ namespace InvestmentOperations.API.Controllers
                 AssetCode = dto.AssetCode
             };
 
-            var result = _assetService.Update(asset);
+            var result = await _assetService.Update(asset);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -82,9 +83,9 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = _assetService.Delete(id);
+            var result = await _assetService.Delete(id);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

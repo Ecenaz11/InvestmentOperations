@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using InvestmentOperations.API.Authorization;
 using InvestmentOperations.API.BackgroundServices;
+using InvestmentOperations.Core.DataAccess;
 
 var builder = WebApplication.CreateBuilder(args);
 

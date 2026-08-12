@@ -5,13 +5,12 @@ using InvestmentOperations.Entities.Concrete;
 using InvestmentOperations.Entities.Dtos;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 using System.Security.Claims;
 using IHttpContextAccessor = Microsoft.AspNetCore.Http.IHttpContextAccessor;
 using InvestmentOperations.Entities.Enums;
+using InvestmentOperations.Core.DataAccess;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.Business.Concrete
 {
@@ -33,7 +32,7 @@ namespace InvestmentOperations.Business.Concrete
             _logService = logService;
         }
 
-        public IResult Add(AssetHolding assetHolding)
+        public async Task<IResult> Add(AssetHolding assetHolding)
         {
             IResult result = ValidateAssetHolding(assetHolding);
             if (!result.Success)
@@ -41,19 +40,19 @@ namespace InvestmentOperations.Business.Concrete
                 return result;
             }
 
-            result = CheckUserExists(assetHolding.UserId);
+            result = await CheckUserExists(assetHolding.UserId);
             if (!result.Success)
             {
                 return result;
             }
 
-            result = CheckAssetExisting(assetHolding.AssetId);
+            result = await CheckAssetExisting(assetHolding.AssetId);
             if (!result.Success)
             {
                 return result;
             }
 
-            var existingAssetHolding = _assetHoldingDal.Get(a => a.UserId == assetHolding.UserId && a.AssetId == assetHolding.AssetId);
+            var existingAssetHolding = await _assetHoldingDal.GetAsync(a => a.UserId == assetHolding.UserId && a.AssetId == assetHolding.AssetId);
             if (existingAssetHolding != null)
             {
                 existingAssetHolding.Amount += assetHolding.Amount;
@@ -72,9 +71,9 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult("Asset holding added successfully.");
         }
 
-        public IResult Deposit(int userId, decimal amount)
+        public async Task<IResult> Deposit(int userId, decimal amount)
         {
-            var tlAsset = _assetService.GetAll().Data?.FirstOrDefault(a => a.AssetCode == "TL");
+            var tlAsset = (await _assetService.GetAll()).Data?.FirstOrDefault(a => a.AssetCode == "TL");
             if (tlAsset == null)
             {
                 return new ErrorResult("TL asset not found.");
@@ -87,12 +86,12 @@ namespace InvestmentOperations.Business.Concrete
                 Amount = amount
             };
 
-            return Add(assetHolding);
+            return await Add(assetHolding);
         }
 
-        public IResult Delete(int id)
+        public async Task<IResult> Delete(int id)
         {
-            var assetHolding = _assetHoldingDal.Get(a => a.AssetHoldingId == id);
+            var assetHolding = await _assetHoldingDal.GetAsync(a => a.AssetHoldingId == id);
             if (assetHolding == null)
             {
                 return new ErrorResult("Asset holding not found.");
@@ -104,45 +103,53 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult("Asset holding deleted successfully.");
         }
 
-        public IDataResult<List<AssetHolding>> GetByUserId(int userId)
+        public async Task<IDataResult<List<AssetHolding>>> GetByUserId(int userId)
         {
-            var assetHoldings = _assetHoldingDal.GetAll(a => a.UserId == userId);
+            var assetHoldings = await _assetHoldingDal.GetAllAsync(a => a.UserId == userId);
             LogAction("AssetHoldingsListedByUser", $"UserId: {userId}");
             return new SuccessDataResult<List<AssetHolding>>(assetHoldings, "Asset holdings listed.");
         }
 
-        public IDataResult<List<AssetHoldingDto>> GetAllDetailed()
+        public async Task<IDataResult<List<AssetHoldingDto>>> GetAllDetailed()
         {
-            var assetHoldings = _assetHoldingDal.GetAll();
-            var dtos = assetHoldings.Select(MapToDto).ToList();
+            var assetHoldings = await _assetHoldingDal.GetAllAsync();
+            var dtos = new List<AssetHoldingDto>();
+            foreach (var assetHolding in assetHoldings)
+            {
+                dtos.Add(await MapToDto(assetHolding));
+            }
 
             LogAction("AssetHoldingsListed", $"Count: {dtos.Count}");
 
             return new SuccessDataResult<List<AssetHoldingDto>>(dtos, "Asset holdings listed.");
         }
 
-        public IDataResult<AssetHoldingDto> GetByIdDetailed(int id)
+        public async Task<IDataResult<AssetHoldingDto>> GetByIdDetailed(int id)
         {
-            var assetHolding = _assetHoldingDal.Get(a => a.AssetHoldingId == id);
+            var assetHolding = await _assetHoldingDal.GetAsync(a => a.AssetHoldingId == id);
             if (assetHolding == null)
             {
                 return new ErrorDataResult<AssetHoldingDto>("Asset holding not found.");
             }
             LogAction("AssetHoldingViewed", $"AssetHoldingId: {id}");
 
-            return new SuccessDataResult<AssetHoldingDto>(MapToDto(assetHolding), "Asset holding found.");
+            return new SuccessDataResult<AssetHoldingDto>(await MapToDto(assetHolding), "Asset holding found.");
         }
 
-        public IDataResult<List<AssetHoldingDto>> GetByUserIdDetailed(int userId)
+        public async Task<IDataResult<List<AssetHoldingDto>>> GetByUserIdDetailed(int userId)
         {
-            var result = GetByUserId(userId);
-            var dtos = result.Data.Select(MapToDto).ToList();
+            var result = await GetByUserId(userId);
+            var dtos = new List<AssetHoldingDto>();
+            foreach (var assetHolding in result.Data)
+            {
+                dtos.Add(await MapToDto(assetHolding));
+            }
             return new SuccessDataResult<List<AssetHoldingDto>>(dtos, "Asset holdings listed.");
         }
 
-        public IResult Update(AssetHolding assetHolding)
+        public async Task<IResult> Update(AssetHolding assetHolding)
         {
-            var existingAssetHolding = _assetHoldingDal.Get(a => a.AssetHoldingId == assetHolding.AssetHoldingId);
+            var existingAssetHolding = await _assetHoldingDal.GetAsync(a => a.AssetHoldingId == assetHolding.AssetHoldingId);
             if (existingAssetHolding == null)
             {
                 return new ErrorResult("Asset holding not found.");
@@ -161,9 +168,9 @@ namespace InvestmentOperations.Business.Concrete
             LogAction("AssetHoldingUpdated", $"AssetHoldingId: {assetHolding.AssetHoldingId}, AssetId: {assetHolding.AssetId}, Amount: {assetHolding.Amount}");
             return new SuccessResult("Asset holding updated successfully.");
         }
-        private AssetHoldingDto MapToDto(AssetHolding assetHolding)
+        private async Task<AssetHoldingDto> MapToDto(AssetHolding assetHolding)
         {
-            var asset = _assetService.GetById(assetHolding.AssetId).Data;
+            var asset = (await _assetService.GetById(assetHolding.AssetId)).Data;
             return new AssetHoldingDto
             {
                 AssetHoldingId = assetHolding.AssetHoldingId,
@@ -219,9 +226,9 @@ namespace InvestmentOperations.Business.Concrete
             assetHolding.UpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         }
 
-        private IResult CheckUserExists(int userId)
+        private async Task<IResult> CheckUserExists(int userId)
         {
-            var user = _userService.GetById(userId);
+            var user = await _userService.GetById(userId);
             if (!user.Success)
             {
                 return new ErrorResult("User not found.");
@@ -229,9 +236,9 @@ namespace InvestmentOperations.Business.Concrete
             return new SuccessResult();
         }
 
-        private IResult CheckAssetExisting(int assetId)
+        private async Task<IResult> CheckAssetExisting(int assetId)
         {
-            var asset = _assetService.GetById(assetId);
+            var asset = await _assetService.GetById(assetId);
             if (!asset.Success)
             {
                 return new ErrorResult("Asset not found.");

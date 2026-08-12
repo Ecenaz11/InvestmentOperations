@@ -1,13 +1,14 @@
 using InvestmentOperations.Core.Utilities.Results;
 using InvestmentOperations.Entities.Concrete;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.Business.Abstract
 {
     public interface ILogService
     {
         IResult Add(Log log);
-        IDataResult<List<Log>> GetAll();
-        IDataResult<List<Log>> GetByUserId(int userId);
+        Task<IDataResult<List<Log>>> GetAll();
+        Task<IDataResult<List<Log>>> GetByUserId(int userId);
     }
 }

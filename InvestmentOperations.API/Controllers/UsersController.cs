@@ -32,7 +32,7 @@ namespace InvestmentOperations.API.Controllers
                     return Forbid();
                 }
 
-                var result = _userService.GetAll();
+                var result = await _userService.GetAll();
                 if (!result.Success)
                 {
                     return BadRequest(result.Message);
@@ -48,7 +48,7 @@ namespace InvestmentOperations.API.Controllers
                 {
                     return Forbid();
                 }
-                var singleResult = _userService.GetById(dto.Id.Value);
+                var singleResult = await _userService.GetById(dto.Id.Value);
                 if (!singleResult.Success)
                 {
                     return BadRequest(singleResult.Message);
@@ -89,7 +89,7 @@ namespace InvestmentOperations.API.Controllers
 
             };
 
-            var result = _userService.Update(user);
+            var result = await _userService.Update(user);
             if (!result.Success)
             {
                 return BadRequest(result.Message);
@@ -99,9 +99,9 @@ namespace InvestmentOperations.API.Controllers
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = _userService.Delete(id);
+            var result = await _userService.Delete(id);
             if (!result.Success)
             {
                 return BadRequest(result.Message);

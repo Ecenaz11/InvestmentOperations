@@ -22,7 +22,7 @@ namespace InvestmentOperations.Business.Concrete
 
         public async Task SyncPricesAsync()
         {
-            var assets = _assetService.GetAll().Data;
+            var assets = (await _assetService.GetAll()).Data;
 
             foreach (var asset in assets)
             {
@@ -48,12 +48,12 @@ namespace InvestmentOperations.Business.Concrete
             }
         }
 
-        private void UpsertPrice(int assetId, decimal currentPrice)
+         private async Task UpsertPrice(int assetId, decimal currentPrice)
         {
-            var existing = _priceService.GetByAssetId(assetId);
+            var existing = await _priceService.GetByAssetId(assetId);
             if (existing.Success)
             {
-                _priceService.Update(new Price
+                await _priceService.Update(new Price
                 {
                     PriceId = existing.Data.PriceId,
                     AssetId = assetId,
@@ -62,7 +62,7 @@ namespace InvestmentOperations.Business.Concrete
             }
             else
             {
-                _priceService.Add(new Price
+                await _priceService.Add(new Price
                 {
                     AssetId = assetId,
                     CurrentPrice = currentPrice

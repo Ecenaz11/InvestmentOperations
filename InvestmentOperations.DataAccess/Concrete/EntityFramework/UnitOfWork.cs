@@ -1,5 +1,5 @@
-using InvestmentOperations.DataAccess.Abstract;
 using Microsoft.EntityFrameworkCore.Storage;
+using InvestmentOperations.Core.DataAccess;
 
 namespace InvestmentOperations.DataAccess.Concrete.EntityFramework
 {

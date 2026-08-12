@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using InvestmentOperations.Entities.Concrete;
+using System.Threading.Tasks;
 
 namespace InvestmentOperations.DataAccess.Abstract
 {
     public interface ILogDal
     {
         void Add(Log log);
-        List<Log> GetAll();
-        List<Log> GetByUserId(int userId);
+        Task<List<Log>> GetAllAsync();
+        Task<List<Log>> GetByUserIdAsync(int userId);
     }
 }
