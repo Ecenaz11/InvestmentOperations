@@ -11,6 +11,8 @@ using InvestmentOperations.API.Authorization;
 using InvestmentOperations.API.BackgroundServices;
 using InvestmentOperations.Core.DataAccess;
 using InvestmentOperations.Core.Caching;
+using InvestmentOperations.DataAccess.Migrations;
+using InvestmentOperations.API.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,9 @@ builder.Services.AddDbContext<InvestmentContext>(options =>
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddExternalPriceApis(builder.Configuration);
+
+/*
 builder.Services.AddHttpClient<IGoldApiClient, GoldApiClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ExternalPriceApis:GoldApi:BaseUrl"]);
@@ -31,9 +36,12 @@ builder.Services.AddHttpClient<IFrankfurterClient, FrankfurterClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ExternalPriceApis:Frankfurter:BaseUrl"]);
 });
+*/
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+
+
 
 builder.Services.AddControllers();
 

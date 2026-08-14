@@ -44,11 +44,11 @@ namespace InvestmentOperations.Business.Concrete
                     continue;
                 }
 
-                UpsertPrice(asset.AssetId, newPrice.Value);
+              await UpdatePrice(asset.AssetId, newPrice.Value);
             }
         }
 
-         private async Task UpsertPrice(int assetId, decimal currentPrice)
+         private async Task UpdatePrice(int assetId, decimal currentPrice)
         {
             var existing = await _priceService.GetByAssetId(assetId);
             if (existing.Success)
